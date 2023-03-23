@@ -1,4 +1,35 @@
+set serveroutput on
+declare
+    v_table_exists varchar(1) := 'Y';
+    v_sql varchar(2000);
+begin
+   dbms_output.put_line('Start schema cleanup');
+   for i in (select 'PASSENGER' table_name from dual union all
+             select 'STATUS' table_name from dual         
+   )
+   loop
+   dbms_output.put_line('***Drop table '||i.table_name||'***');
+   begin
+       select 'Y' into v_table_exists
+       from USER_TABLES
+       where TABLE_NAME=i.table_name;
 
+       v_sql := 'drop table '||i.table_name;
+       execute immediate v_sql;
+       dbms_output.put_line('.***Table '||i.table_name||' dropped successfully***');
+       
+   exception
+       when no_data_found then
+           dbms_output.put_line('***Table already dropped***');
+   end;
+   end loop;
+   dbms_output.put_line('***Schema cleanup successfully completed***');
+exception
+   when others then
+      dbms_output.put_line('***Failed to execute code:'||sqlerrm||'***');
+end;
+
+/
 -- Table Cusotmer
 --------------------------------------------------------------------
 
@@ -819,3 +850,4 @@ Insert into PASSENGER (PASSENGERID,FIRSTNAME,LASTNAME,EMAIL,PHONENO,AGE,GENDER,B
 Insert into PASSENGER (PASSENGERID,FIRSTNAME,LASTNAME,EMAIL,PHONENO,AGE,GENDER,BOOKING_BOOKINGID,STATUS_STATUSID) values (202,'Genevieve','Parker','Genevieve_Parker@yahoo.com','8900435771',1,'M',129,2);
 Insert into PASSENGER (PASSENGERID,FIRSTNAME,LASTNAME,EMAIL,PHONENO,AGE,GENDER,BOOKING_BOOKINGID,STATUS_STATUSID) values (203,'Ruben','Okuneva','Ruben.Okuneva34@hotmail.com','6849079568',17,'M',130,1);
 Insert into PASSENGER (PASSENGERID,FIRSTNAME,LASTNAME,EMAIL,PHONENO,AGE,GENDER,BOOKING_BOOKINGID,STATUS_STATUSID) values (204,'Audrey','Kohler','Audrey_Kohler@yahoo.com','1025161269',40,'F',131,1);
+/
