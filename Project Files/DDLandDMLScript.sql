@@ -14,7 +14,7 @@ for i in (select 'PASSENGER' table_name from dual union all
              select 'AIRPORTS' table_name from dual union all
              select 'FLIGHT_SEAT_AVAILABILITY' table_name from dual union all
              select 'FLIGHT_TYPE' table_name from dual union all
-             select 'SEAT_TYPE' table_name from dual         
+             select 'SEAT_TYPE' table_name from dual  union all        
    )
    loop
    dbms_output.put_line('***Drop table '||i.table_name||'***');
@@ -1230,5 +1230,33 @@ FROM ROUTES r
 INNER JOIN FLIGHT_TYPE ft ON r.FlightType_FlightTypeID = ft.FLIGHTTYPEID
 INNER JOIN FLIGHT_SCHEDULES fs ON r.ROUTEID = fs.ROUTES_ROUTEID
 WHERE fs.SEATSAVAILABLE / ft.TOTALNOOFSEATS > 0.5
-ORDER BY (fs.SEATSAVAILABLE / ft.TOTALNOOFSEATS) DESC
+ORDER BY (fs.SEATSAVAILABLE / ft.TOTALNOOFSEATS) DESC;
 
+------------------------------------------------------------
+-- Passenger Traffic by Source State VIEW
+------------------------------------------------------------
+CREATE or replace VIEW passenger_traffic_by_source_state AS
+WITH temp AS(
+SELECT a.state,p.passengerid
+FROM airports a
+join routes r on a.airports_id = r.sourceairport
+join flight_schedules f on r.routeid = f.routes_routeid
+join booking b on f.flight_schedule_id = b.flight_schedules_flight_schedule_id
+join passenger p on b.bookingid = p.booking_bookingid
+)
+SELECT state, count(passengerid) passenger_count FROM temp group by state order by passenger_count DESC;
+
+
+------------------------------------------------------------
+-- Passenger Traffic by Destination State VIEW
+------------------------------------------------------------
+CREATE or replace VIEW passenger_traffic_by_destination_state AS
+WITH temp AS(
+SELECT a.state,p.passengerid
+FROM airports a
+join routes r on a.airports_id = r.destinationairport
+join flight_schedules f on r.routeid = f.routes_routeid
+join booking b on f.flight_schedule_id = b.flight_schedules_flight_schedule_id
+join passenger p on b.bookingid = p.booking_bookingid
+)
+SELECT state, count(passengerid) passenger_count FROM temp group by state order by passenger_count DESC;
