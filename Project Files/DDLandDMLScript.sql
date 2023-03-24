@@ -1245,3 +1245,18 @@ join booking b on f.flight_schedule_id = b.flight_schedules_flight_schedule_id
 join passenger p on b.bookingid = p.booking_bookingid
 )
 SELECT state, count(passengerid) passenger_count FROM temp group by state order by passenger_count DESC;
+
+
+------------------------------------------------------------
+-- Passenger Traffic by Destination State VIEW
+------------------------------------------------------------
+CREATE or replace VIEW passenger_traffic_by_destination_state AS
+WITH temp AS(
+SELECT a.state,p.passengerid
+FROM airports a
+join routes r on a.airports_id = r.destinationairport
+join flight_schedules f on r.routeid = f.routes_routeid
+join booking b on f.flight_schedule_id = b.flight_schedules_flight_schedule_id
+join passenger p on b.bookingid = p.booking_bookingid
+)
+SELECT state, count(passengerid) passenger_count FROM temp group by state order by passenger_count DESC;
