@@ -36,7 +36,7 @@ exception
 end;
 
 /
--- Table Cusotmer
+-- Table Customer
 --------------------------------------------------------------------
 
 CREATE TABLE CUSTOMER (
@@ -1185,3 +1185,28 @@ select * from passenger where BOOKING_BOOKINGID in
 (select FLIGHT_SCHEDULE_ID from flight_schedules where dateoftravel = 
 (select to_char(to_date(sysdate)) from dual)));
 /
+
+
+-- View 1 (Seat Distribution)
+CREATE OR REPLACE VIEW SeatDistribution as 
+Select f.FLIGHTNAME, s.SEATTYPENAME,  fs.NOOFSEATS from FLIGHT_TYPE  f
+inner join FLIGHT_SEAT_AVAILABILITY  fs on 
+f.FLIGHTTYPEID = fs.FLIGHTTYPE_FLIGHTTYPEID
+inner join SEAT_TYPE s on
+s.SEATTYPEID = fs.SEAT_TYPE_SEATTYPEID;
+
+
+-- View 2 (Flights Operational Today)
+CREATE OR REPLACE VIEW FlightsOperationalToday AS
+SELECT *
+FROM FLIGHT_SCHEDULES
+WHERE TRUNC(DateOfTravel) = TRUNC(SYSDATE);
+
+-- View (Top Routes with Vacant Seats)
+CREATE OR REPLACE VIEW TopRouteswithVacantSeats AS
+SELECT r.ROUTENO, fs.SEATSAVAILABLE, ft.TOTALNOOFSEATS, fs.DATEOFTRAVEL
+FROM ROUTES r
+INNER JOIN FLIGHT_TYPE ft ON r.FLIGHTTYPEID = ft.FLIGHTTYPEID
+INNER JOIN FLIGHT_SCHEDULES fs ON r.ROUTEID = fs.ROUTES_ROUTEID
+WHERE fs.SEATSAVAILABLE / ft.TOTALNOOFSEATS > 0.5
+ORDER BY (fs.SEATSAVAILABLE / ft.TOTALNOOFSEATS) DESC;
