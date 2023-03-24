@@ -1129,7 +1129,7 @@ GROUP BY (p.PROMOTIONID, p.PROMOTIONNAME, p.PROMOTIONDESC);
 ------------------------------------------------------------
 -- Passengers traveling today VIEW
 ------------------------------------------------------------
-create or replace view PassengerTravellingToday as
+create or replace view Passenger_Travelling_Today as
 select * from passenger where BOOKING_BOOKINGID in 
 (select BOOKINGID from booking where FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID = 
 (select FLIGHT_SCHEDULE_ID from flight_schedules where dateoftravel = 
