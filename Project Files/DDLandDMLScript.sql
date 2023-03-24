@@ -73,15 +73,27 @@ CREATE TABLE AIRPORTS (
 -- Table Routes
 --------------------------------------------------------------------
 
-CREATE TABLE ROUTES (ROUTEID NUMBER NOT NULL,
-ROUTENO VARCHAR2(45) NOT NULL,
-DEPARTURETIME VARCHAR2(45) NOT NULL,
-DURATIONOFTRAVELINMINUTES NUMBER NOT NULL,
-FlightTypeID NUMBER NOT NULL,
-SOURCEAIRPORT VARCHAR2(45) NOT NULL,
-DESTINATIONAIRPORT VARCHAR2(45) NOT NULL,
-Foreign Key (FlightTypeID) References FLIGHT_TYPE(FlightTypeID),
-PRIMARY KEY (ROUTEID));
+CREATE TABLE ROUTES (
+  RouteID NUMBER NOT NULL,
+  RouteNo VARCHAR2(45) NOT NULL UNIQUE,
+  DepartureTime VARCHAR(8) NOT NULL,
+  DurationOfTravelInMinutes NUMBER NOT NULL,
+  FlightType_FlightTypeID NUMBER NOT NULL,
+  SourceAirport NUMBER NOT NULL,
+  DestinationAirport NUMBER NOT NULL,
+  PRIMARY KEY (RouteID),
+  CONSTRAINT fk_ROUTES_FlightType
+    FOREIGN KEY (FlightType_FlightTypeID)
+    REFERENCES FLIGHT_TYPE (FlightTypeID)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_ROUTES_AIRPORT_CODES
+    FOREIGN KEY (SourceAirport)
+    REFERENCES AIRPORTS (Airports_ID)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_ROUTES_AIRPORT_CODES1
+    FOREIGN KEY (DestinationAirport)
+    REFERENCES AIRPORTS (Airports_ID)
+    ON DELETE CASCADE);
 
 -- Table Seat type
 --------------------------------------------------------------------
