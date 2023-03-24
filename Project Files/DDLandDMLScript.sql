@@ -10,6 +10,8 @@ begin
              select 'PROMOTION' table_name from dual union all
              select 'FLIGHT_SEAT_AVAILABILITY' table_name from dual union all
              select 'FLIGHT_SCHEDULES' table_name from dual
+             select 'ROUTES' table_name from dual union all
+             select 'SEAT_TYPE' table_name from dual union all
    )
    loop
    dbms_output.put_line('***Drop table '||i.table_name||'***');
