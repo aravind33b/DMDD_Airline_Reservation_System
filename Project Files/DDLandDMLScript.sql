@@ -1186,8 +1186,9 @@ select * from passenger where BOOKING_BOOKINGID in
 (select to_char(to_date(sysdate)) from dual)));
 /
 
-
--- View 1 (Seat Distribution)
+------------------------------------------------------------
+-- Seat Distribution VIEW
+------------------------------------------------------------
 CREATE OR REPLACE VIEW SeatDistribution as 
 Select f.FLIGHTNAME, s.SEATTYPENAME,  fs.NOOFSEATS from FLIGHT_TYPE  f
 inner join FLIGHT_SEAT_AVAILABILITY  fs on 
@@ -1196,13 +1197,18 @@ inner join SEAT_TYPE s on
 s.SEATTYPEID = fs.SEAT_TYPE_SEATTYPEID;
 
 
--- View 2 (Flights Operational Today)
+------------------------------------------------------------
+-- Flights Operational Today VIEW
+------------------------------------------------------------
 CREATE OR REPLACE VIEW FlightsOperationalToday AS
 SELECT *
 FROM FLIGHT_SCHEDULES
 WHERE TRUNC(DateOfTravel) = TRUNC(SYSDATE);
 
--- View (Top Routes with Vacant Seats)
+
+------------------------------------------------------------
+-- Top Routes with Vacant Seats VIEW
+------------------------------------------------------------
 CREATE OR REPLACE VIEW TopRouteswithVacantSeats AS
 SELECT r.ROUTENO, fs.SEATSAVAILABLE, ft.TOTALNOOFSEATS, fs.DATEOFTRAVEL
 FROM ROUTES r
