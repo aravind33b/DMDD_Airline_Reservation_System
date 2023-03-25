@@ -1199,7 +1199,17 @@ select * from passenger where BOOKING_BOOKINGID in
 (select BOOKINGID from booking where FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID = 
 (select FLIGHT_SCHEDULE_ID from flight_schedules where dateoftravel = 
 (select to_char(to_date(sysdate)) from dual)));
-/
+
+------------------------------------------------------------
+-- Number of passengers traveling per quarter VIEW
+------------------------------------------------------------
+create or replace view Passengers_travelling_per_quarter as
+SELECT COUNT(*) "No of Passengers", QUARTER FROM
+(SELECT 'Quarter ' || to_char(fs.DATEOFTRAVEL, 'Q') QUARTER FROM PASSENGER p
+INNER JOIN BOOKING b ON p.BOOKING_BOOKINGID = b.BOOKINGID
+INNER JOIN FLIGHT_SCHEDULES fs on fs.FLIGHT_SCHEDULE_ID = b.FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID
+WHERE EXTRACT(YEAR FROM DATEOFTRAVEL)= EXTRACT(YEAR FROM sysdate))
+GROUP BY QUARTER;
 
 ------------------------------------------------------------
 -- Seat Distribution VIEW
