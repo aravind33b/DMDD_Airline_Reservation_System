@@ -5,16 +5,13 @@ declare
 begin
    dbms_output.put_line('Start schema cleanup');
 for i in (select 'PASSENGER' table_name from dual union all
-             select 'BOOKING' table_name from dual union all
-             select 'CUSTOMER' table_name from dual union all
-             select 'PROMOTION' table_name from dual union all
              select 'STATUS' table_name from dual union all
+             select 'BOOKING' table_name from dual union all
+             select 'PROMOTION' table_name from dual union all
              select 'FLIGHT_SCHEDULES' table_name from dual union all
-             select 'ROUTES' table_name from dual union all
-             select 'AIRPORTS' table_name from dual union all
              select 'FLIGHT_SEAT_AVAILABILITY' table_name from dual union all
-             select 'FLIGHT_TYPE' table_name from dual union all
              select 'SEAT_TYPE' table_name from dual  union all
+             select 'ROUTES' table_name from dual union all
              select 'AIRPORTS' table_name from dual union all
              select 'FLIGHT_TYPE' table_name from dual union all
              select 'CUSTOMER' table_name from dual
@@ -269,12 +266,15 @@ VALUES (24, 'Genevieve', 'Parker', 'Genevieve_Parker@yahoo.com', '8900435771');
 INSERT INTO AIRLINE_ADMIN.CUSTOMER (CUSTOMERID, FIRSTNAME, LASTNAME, EMAIL, MOBILENO) 
 VALUES (25, 'Carroll', 'Murphy', 'Carroll_Murphy62@gmail.com', '7636236121');
 
+COMMIT;
 
 -- Inserting values into Flight_Type table
 INSERT INTO FLIGHT_TYPE (FLIGHTTYPEID, FLIGHTNAME, TOTALNOOFSEATS) 
 VALUES (1, 'A220', 75);
 INSERT INTO FLIGHT_TYPE (FLIGHTTYPEID, FLIGHTNAME, TOTALNOOFSEATS) 
 VALUES (2, 'A320', 100);
+
+COMMIT;
 
 -- Inserting values into the Airports table  
 INSERT INTO AIRPORTS (AIRPORTS_ID, STATE, CITY, AIRPORT_CODE, AIRPORT_LONGNAME) 
@@ -464,7 +464,7 @@ VALUES (92, 'Wisconsin', 'Madison', 'MSN', 'Dane County Regional Airport');
 INSERT INTO AIRPORTS (AIRPORTS_ID, STATE, CITY, AIRPORT_CODE, AIRPORT_LONGNAME) 
 VALUES (93, 'Wisconsin', 'Milwaukee', 'MKE', 'Milwaukee Mitchell International Airport');
 
-
+COMMIT;
 
 -- Inserting data into the ROUTES table
 INSERT INTO ROUTES (ROUTEID, ROUTENO, DEPARTURETIME, DURATIONOFTRAVELINMINUTES, FlightType_FlightTypeID, SOURCEAIRPORT, DESTINATIONAIRPORT) 
@@ -478,16 +478,21 @@ VALUES (4, 'JCP', '11:15', 442, 2, 21, 28);
 INSERT INTO ROUTES (ROUTEID, ROUTENO, DEPARTURETIME, DURATIONOFTRAVELINMINUTES, FlightType_FlightTypeID, SOURCEAIRPORT, DESTINATIONAIRPORT) 
 VALUES (5, 'CQC', '18:45', 130, 2, 46, 87);
 
+COMMIT;
+
 -- Inserting data into the Seat types table
 Insert into SEAT_TYPE (SEATTYPEID,SEATTYPENAME) values (1,'Economy');
 Insert into SEAT_TYPE (SEATTYPEID,SEATTYPENAME) values (2,'Business');
 
+COMMIT;
 
 -- Inserting data into the FLIGHT_SEAT_AVAILABILITY table
 Insert into FLIGHT_SEAT_AVAILABILITY (FLIGHTSEATAVAILABILITYID,NOOFSEATS,FLIGHTTYPE_FLIGHTTYPEID,SEAT_TYPE_SEATTYPEID) values (1,50,1,1);
 Insert into FLIGHT_SEAT_AVAILABILITY (FLIGHTSEATAVAILABILITYID,NOOFSEATS,FLIGHTTYPE_FLIGHTTYPEID,SEAT_TYPE_SEATTYPEID) values (2,25,1,2);
 Insert into FLIGHT_SEAT_AVAILABILITY (FLIGHTSEATAVAILABILITYID,NOOFSEATS,FLIGHTTYPE_FLIGHTTYPEID,SEAT_TYPE_SEATTYPEID) values (3,70,2,1);
 Insert into FLIGHT_SEAT_AVAILABILITY (FLIGHTSEATAVAILABILITYID,NOOFSEATS,FLIGHTTYPE_FLIGHTTYPEID,SEAT_TYPE_SEATTYPEID) values (4,30,2,2);
+
+COMMIT;
 
 -- Inserting data into FLIGHT_SCHEDULES table
 Insert into FLIGHT_SCHEDULES (FLIGHT_SCHEDULE_ID,SEATSAVAILABLE,DATEOFTRAVEL,ROUTES_ROUTEID) values (1,93,to_date('04-MAR-23','DD-MON-RR'),1);
@@ -535,12 +540,14 @@ Insert into FLIGHT_SCHEDULES (FLIGHT_SCHEDULE_ID,SEATSAVAILABLE,DATEOFTRAVEL,ROU
 Insert into FLIGHT_SCHEDULES (FLIGHT_SCHEDULE_ID,SEATSAVAILABLE,DATEOFTRAVEL,ROUTES_ROUTEID) values (43,97,to_date('18-APR-23','DD-MON-RR'),5);
 Insert into FLIGHT_SCHEDULES (FLIGHT_SCHEDULE_ID,SEATSAVAILABLE,DATEOFTRAVEL,ROUTES_ROUTEID) values (44,87,to_date('25-APR-23','DD-MON-RR'),5);
 
+COMMIT;
 -- Inserting data into PROMOTION table
 ---------------------------------------------------------------------------
 Insert into PROMOTION (PROMOTIONID,PROMOTIONNAME,PROMOTIONDESC,ACTIVE) values (1,'BofA',' For Bofa Platinum Members','Y');
 Insert into PROMOTION (PROMOTIONID,PROMOTIONNAME,PROMOTIONDESC,ACTIVE) values (2,'Chase',' For Chase Diamond Members','Y');
 Insert into PROMOTION (PROMOTIONID,PROMOTIONNAME,PROMOTIONDESC,ACTIVE) values (3,'Santander',' For Santander Gold Members','Y');
 
+COMMIT;
 -- Inserting data into BOOKING table
 ---------------------------------------------------------------------------
 Insert into AIRLINE_ADMIN.BOOKING (BOOKINGID,PNR,DATEOFBOOKING,CUSTOMER_ID,PROMOTION_PROMOTIONID,SEAT_TYPE_SEATTYPEID,FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID) values (1,'BHIXM',to_date('29-JAN-23','DD-MON-RR'),18,1,1,1);
@@ -794,11 +801,14 @@ Insert into AIRLINE_ADMIN.BOOKING (BOOKINGID,PNR,DATEOFBOOKING,CUSTOMER_ID,PROMO
 Insert into AIRLINE_ADMIN.BOOKING (BOOKINGID,PNR,DATEOFBOOKING,CUSTOMER_ID,PROMOTION_PROMOTIONID,SEAT_TYPE_SEATTYPEID,FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID) values (249,'WKLYC',to_date('22-FEB-23','DD-MON-RR'),13,2,2,44);
 Insert into AIRLINE_ADMIN.BOOKING (BOOKINGID,PNR,DATEOFBOOKING,CUSTOMER_ID,PROMOTION_PROMOTIONID,SEAT_TYPE_SEATTYPEID,FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID) values (250,'DAQHC',to_date('07-FEB-23','DD-MON-RR'),2,3,2,44);
 
+COMMIT;
 
 -- Data for table Status
 -- -----------------------------------------------------
 Insert into STATUS (STATUSID,STATUS) values (1,'Booked');
 Insert into STATUS (STATUSID,STATUS) values (2,'Cancelled');
+
+COMMIT;
 
 -- Data for table Passenger
 -- -----------------------------------------------------
@@ -1183,6 +1193,7 @@ Insert into AIRLINE_ADMIN.PASSENGER (PASSENGERID,FIRSTNAME,LASTNAME,EMAIL,PHONEN
 Insert into AIRLINE_ADMIN.PASSENGER (PASSENGERID,FIRSTNAME,LASTNAME,EMAIL,PHONENO,AGE,GENDER,BOOKING_BOOKINGID,STATUS_STATUSID) values (203,'Ruben','Okuneva','Ruben.Okuneva34@hotmail.com','6849079568',17,'M',130,1);
 Insert into AIRLINE_ADMIN.PASSENGER (PASSENGERID,FIRSTNAME,LASTNAME,EMAIL,PHONENO,AGE,GENDER,BOOKING_BOOKINGID,STATUS_STATUSID) values (204,'Audrey','Kohler','Audrey_Kohler@yahoo.com','1025161269',40,'F',131,1);
 
+COMMIT;
 -- -----------------------------------------------------
 -- Top Flights Operational Today VIEW
 -- -----------------------------------------------------
