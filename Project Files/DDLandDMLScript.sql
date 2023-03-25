@@ -1221,7 +1221,7 @@ SELECT COUNT(*) "No of Passengers", QUARTER FROM
 (SELECT 'Quarter ' || to_char(fs.DATEOFTRAVEL, 'Q') QUARTER FROM PASSENGER p
 INNER JOIN BOOKING b ON p.BOOKING_BOOKINGID = b.BOOKINGID
 INNER JOIN FLIGHT_SCHEDULES fs on fs.FLIGHT_SCHEDULE_ID = b.FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID
-WHERE EXTRACT(YEAR FROM DATEOFTRAVEL)= EXTRACT(YEAR FROM sysdate))
+WHERE EXTRACT(YEAR FROM DATEOFTRAVEL)= EXTRACT(YEAR FROM sysdate) AND p.STATUS_STATUSID=1)
 GROUP BY QUARTER;
 
 ------------------------------------------------------------
@@ -1298,39 +1298,42 @@ ORDER BY Count(b.BOOKINGID) DESC FETCH FIRST 10 ROWS WITH TIES;
 ------------------------------------------------------------
 
 create or replace view Top_Routes_This_Year as
-Select COUNT(fs.ROUTES_RouteID) "No. of Flights in Last 12 Months", r.RouteNo "Route No.", src.Airport_LongName "Source", dst.Airport_LongName "Destination" FROM BOOKING b
+Select COUNT(*) "No. of Passengers travelled in past Year", r.RouteNo "Route No.", src.Airport_LongName "Source", dst.Airport_LongName "Destination" FROM BOOKING b
+INNER JOIN PASSENGER p ON p.BOOKING_BOOKINGID = b.BOOKINGID
 INNER JOIN FLIGHT_SCHEDULES fs ON b.FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID = fs.FLIGHT_SCHEDULE_ID
 INNER JOIN ROUTES r ON r.RouteID = fs.ROUTES_RouteID
 INNER JOIN AIRPORTS src ON src.Airports_ID = r.SourceAirport
 INNER JOIN AIRPORTS dst ON dst.Airports_ID = r.DestinationAirport
 WHERE fs.DateOfTravel <= SYSDATE AND fs.DateOfTravel >= ADD_MONTHS(SYSDATE, -12)
 GROUP BY (r.RouteNo, r.SourceAirport, r.DestinationAirport, src.Airport_LongName, dst.Airport_LongName)
-ORDER BY Count(fs.ROUTES_RouteID) DESC FETCH FIRST 10 ROWS WITH TIES;
+ORDER BY Count(*) DESC FETCH FIRST 10 ROWS WITH TIES;
 
 ------------------------------------------------------------
 -- Top Routes in a Month VIEW
 ------------------------------------------------------------
 
 create or replace view Top_Routes_This_Month as
-Select COUNT(fs.ROUTES_RouteID) "No. of Flights in Last 1 Month", r.RouteNo "Route No.", src.Airport_LongName "Source", dst.Airport_LongName "Destination" FROM BOOKING b
+Select COUNT(*) "No. of Passengers travelled in past 30 days" , r.RouteNo "Route No.", src.Airport_LongName "Source", dst.Airport_LongName "Destination" FROM BOOKING b
+INNER JOIN PASSENGER p ON p.BOOKING_BOOKINGID = b.BOOKINGID
 INNER JOIN FLIGHT_SCHEDULES fs ON b.FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID = fs.FLIGHT_SCHEDULE_ID
 INNER JOIN ROUTES r ON r.RouteID = fs.ROUTES_RouteID
 INNER JOIN AIRPORTS src ON src.Airports_ID = r.SourceAirport
 INNER JOIN AIRPORTS dst ON dst.Airports_ID = r.DestinationAirport
 WHERE fs.DateOfTravel <= SYSDATE AND fs.DateOfTravel >= ADD_MONTHS(SYSDATE, -1)
 GROUP BY (r.RouteNo, r.SourceAirport, r.DestinationAirport, src.Airport_LongName, dst.Airport_LongName)
-ORDER BY Count(fs.ROUTES_RouteID) DESC FETCH FIRST 10 ROWS WITH TIES;
+ORDER BY Count(*) DESC FETCH FIRST 10 ROWS WITH TIES;
 
 ------------------------------------------------------------
 -- Top Routes in a Day VIEW
 ------------------------------------------------------------
 
 create or replace view Top_Routes_Today as
-Select COUNT(fs.ROUTES_RouteID) "No. of Flights in Today", r.RouteNo "Route No.", src.Airport_LongName "Source", dst.Airport_LongName "Destination" FROM BOOKING b
+Select COUNT(*) "No. of Passengers Today", r.RouteNo "Route No.", src.Airport_LongName "Source", dst.Airport_LongName "Destination" FROM BOOKING b
+INNER JOIN PASSENGER p ON p.BOOKING_BOOKINGID = b.BOOKINGID
 INNER JOIN FLIGHT_SCHEDULES fs ON b.FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID = fs.FLIGHT_SCHEDULE_ID
 INNER JOIN ROUTES r ON r.RouteID = fs.ROUTES_RouteID
 INNER JOIN AIRPORTS src ON src.Airports_ID = r.SourceAirport
 INNER JOIN AIRPORTS dst ON dst.Airports_ID = r.DestinationAirport
 WHERE fs.DateOfTravel = TRUNC(SYSDATE)
 GROUP BY (r.RouteNo, r.SourceAirport, r.DestinationAirport, src.Airport_LongName, dst.Airport_LongName)
-ORDER BY Count(fs.ROUTES_RouteID) DESC FETCH FIRST 10 ROWS WITH TIES;
+ORDER BY Count(*) DESC FETCH FIRST 10 ROWS WITH TIES;
