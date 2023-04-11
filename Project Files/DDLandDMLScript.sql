@@ -1,4 +1,5 @@
 set serveroutput on
+
 declare
     v_table_exists varchar(1) := 'Y';
     v_sql varchar(2000);
@@ -39,6 +40,38 @@ exception
 end;
 
 /
+
+declare
+    v_seq_exists varchar(1) := 'Y';
+    v_sql varchar(2000);
+begin
+   dbms_output.put_line('Start sequence cleanup');
+for i in (select 'SEQ_CUSTOMER' seq_name from dual 
+   )
+   loop
+   dbms_output.put_line('***Drop sequence '||i.seq_name||'***');
+   begin
+       select 'Y' into v_seq_exists
+       from user_sequences
+       where SEQUENCE_NAME=i.seq_name;
+
+       v_sql := 'drop sequence '||i.seq_name;
+       execute immediate v_sql;
+       dbms_output.put_line('.***Sequence '||i.seq_name||' dropped successfully***');
+       
+   exception
+       when no_data_found then
+           dbms_output.put_line('***Sequence already dropped***');
+   end;
+   end loop;
+   dbms_output.put_line('***Sequence cleanup successfully completed***');
+exception
+   when others then
+      dbms_output.put_line('***Failed to execute code:'||sqlerrm||'***');
+end;
+
+/
+
 -- Table Customer
 --------------------------------------------------------------------
 
@@ -212,6 +245,8 @@ CREATE TABLE PASSENGER (
   GRANT SELECT,INSERT ON BOOKING TO CUSTOMER;
 
 
+ -- CREATE SEQUENCE for CUSTOMER TABLE
+   CREATE SEQUENCE seq_customer start with 26 increment by 1;
 
   -- Inserting values into the Customer table
 
