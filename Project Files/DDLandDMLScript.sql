@@ -46,7 +46,8 @@ declare
     v_sql varchar(2000);
 begin
    dbms_output.put_line('Start sequence cleanup');
-for i in (select 'SEQ_CUSTOMER' seq_name from dual 
+for i in (select 'SEQ_CUSTOMER' seq_name from dual union all
+      select 'SEQ_ROUTE' seq_name from dual
    )
    loop
    dbms_output.put_line('***Drop sequence '||i.seq_name||'***');
@@ -247,6 +248,9 @@ CREATE TABLE PASSENGER (
 
  -- CREATE SEQUENCE for CUSTOMER TABLE
    CREATE SEQUENCE seq_customer start with 26 increment by 1;
+
+ -- CREATE SEQUENCE for ROUTE TABLE
+   CREATE SEQUENCE seq_route start with 6 increment by 1;
 
   -- Inserting values into the Customer table
 
