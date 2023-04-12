@@ -6,6 +6,17 @@ CREATE OR REPLACE PACKAGE pkg_booking AS
         input_fsid        booking.flight_schedules_flight_schedule_id%TYPE
     );
 
+    PROCEDURE passenger_add (
+        input_fn        passenger.firstname%TYPE,
+        input_ln        passenger.lastname%TYPE,
+        input_email     passenger.email%TYPE,
+        input_phoneno   passenger.phoneno%TYPE,
+        input_age       passenger.age%TYPE,
+        input_gender    passenger.gender%TYPE,
+        input_bookingid passenger.booking_bookingid%TYPE,
+        input_statusid  passenger.status_statusid%TYPE
+    );
+
     invalid_data EXCEPTION;
 END pkg_booking;
 /
@@ -108,6 +119,87 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             dbms_output.put_line('INVALID DATA ENTERED');
         WHEN invalid_dateoftravel THEN
             dbms_output.put_line('INVALID Date of Travel ENTERED');
+        WHEN OTHERS THEN
+            dbms_output.put_line(sqlerrm);
+    END;
+
+    PROCEDURE passenger_add (
+        input_fn        passenger.firstname%TYPE,
+        input_ln        passenger.lastname%TYPE,
+        input_email     passenger.email%TYPE,
+        input_phoneno   passenger.phoneno%TYPE,
+        input_age       passenger.age%TYPE,
+        input_gender    passenger.gender%TYPE,
+        input_bookingid passenger.booking_bookingid%TYPE,
+        input_statusid  passenger.status_statusid%TYPE
+    ) AS
+        cntbooking      NUMBER;
+        cntstatus       NUMBER;
+        seq_passengerid NUMBER;
+    BEGIN
+        SELECT
+            COUNT(*)
+        INTO cntbooking
+        FROM
+            booking
+        WHERE
+            bookingid = input_bookingid;
+
+        SELECT
+            COUNT(*)
+        INTO cntstatus
+        FROM
+            status
+        WHERE
+            statusid = input_statusid;
+
+        IF cntbooking = 0 THEN
+            RAISE invalid_data;
+        ELSIF cntstatus = 0 THEN
+            RAISE invalid_data;
+        ELSIF input_fn IS NULL OR length(input_fn) = 0 THEN
+            RAISE invalid_data;
+        ELSIF input_ln IS NULL OR length(input_ln) = 0 THEN
+            RAISE invalid_data;
+        ELSIF input_email IS NULL OR length(input_email) = 0 THEN
+            RAISE invalid_data;
+        ELSIF input_phoneno IS NULL OR length(input_phoneno) = 0 THEN
+            RAISE invalid_data;
+        ELSIF input_age IS NULL OR input_age < 0 THEN
+            RAISE invalid_data;
+        ELSIF input_gender IS NULL OR length(input_gender) = 0 THEN
+            RAISE invalid_data;
+        ELSE
+            seq_passengerid := seq_passenger.nextval;
+            INSERT INTO passenger (
+                passengerid,
+                firstname,
+                lastname,
+                email,
+                phoneno,
+                age,
+                gender,
+                booking_bookingid,
+                status_statusid
+            ) VALUES (
+                seq_passengerid,
+                input_fn,
+                input_ln,
+                input_email,
+                input_phoneno,
+                input_age,
+                input_gender,
+                input_bookingid,
+                input_statusid
+            );
+
+            COMMIT;
+            dbms_output.put_line('PASSENGER ADDED SUCCCESSFULLY WITH ID ' || seq_passengerid);
+        END IF;
+
+    EXCEPTION
+        WHEN invalid_data THEN
+            dbms_output.put_line('INVALID DATA ENTERED');
         WHEN OTHERS THEN
             dbms_output.put_line(sqlerrm);
     END;
