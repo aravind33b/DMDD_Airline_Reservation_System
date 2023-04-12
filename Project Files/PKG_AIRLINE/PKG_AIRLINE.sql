@@ -12,9 +12,14 @@ CREATE OR REPLACE PACKAGE pkg_airline AS
         input_flighttype_flighttypeid flight_seat_availability.flighttype_flighttypeid%TYPE,
         input_seat_type_seattypeid    flight_seat_availability.seat_type_seattypeid%TYPE
     );
-    
+
     PROCEDURE add_status (
-    inp_status status.status%TYPE
+        inp_status status.status%TYPE
+    );
+
+    PROCEDURE add_flight_schedule (
+        input_route_id flight_schedules.routes_routeid%TYPE,
+        traveldate     flight_schedules.dateoftravel%TYPE
     );
 
     invalid_data EXCEPTION;
@@ -195,31 +200,112 @@ CREATE OR REPLACE PACKAGE BODY pkg_airline AS
     END;
 
     PROCEDURE add_status (
-    inp_status status.status%TYPE
-) AS
-    invalid_data EXCEPTION;
-    count_status NUMBER;
-BEGIN
-    IF inp_status IS NULL OR inp_status = '' THEN
-        RAISE invalid_data;
-    ELSE
-        INSERT INTO status (
-            statusid,
-            status
-        ) VALUES (
-            seq_status.NEXTVAL,
-            inp_status
-        );
+        inp_status status.status%TYPE
+    ) AS
+        invalid_data EXCEPTION;
+        count_status NUMBER;
+    BEGIN
+        IF inp_status IS NULL OR inp_status = '' THEN
+            RAISE invalid_data;
+        ELSE
+            INSERT INTO status (
+                statusid,
+                status
+            ) VALUES (
+                seq_status.NEXTVAL,
+                inp_status
+            );
 
-        COMMIT;
-        dbms_output.put_line('STATUS ADDED SUCCCESSFULLY');
-    END IF;
-EXCEPTION
-    WHEN invalid_data THEN
-        dbms_output.put_line('INVALID DATA ENTERED');
-    WHEN OTHERS THEN
-        dbms_output.put_line(sqlerrm);
-END;
- 
+            COMMIT;
+            dbms_output.put_line('STATUS ADDED SUCCCESSFULLY');
+        END IF;
+    EXCEPTION
+        WHEN invalid_data THEN
+            dbms_output.put_line('INVALID DATA ENTERED');
+        WHEN OTHERS THEN
+            dbms_output.put_line(sqlerrm);
+    END;
+
+    PROCEDURE add_flight_schedule (
+        input_route_id flight_schedules.routes_routeid%TYPE,
+        traveldate     flight_schedules.dateoftravel%TYPE
+    ) AS
+        availablenoofseats     NUMBER;
+        ft_id                  NUMBER;
+        flight_sch_id          NUMBER;
+        cntroutecheck          NUMBER;
+        cntfsalreadyexistcheck NUMBER;
+    BEGIN
+        SELECT
+            COUNT(*)
+        INTO cntroutecheck
+        FROM
+            routes
+        WHERE
+            routeid = input_route_id;
+
+        IF cntroutecheck = 0 THEN
+            RAISE invalid_data;
+        ELSIF input_route_id IS NULL OR input_route_id = '' THEN
+            RAISE invalid_data;
+        ELSIF traveldate IS NULL OR traveldate < sysdate THEN
+            RAISE invalid_data;
+        ELSE
+        -- check if FS already exists for given input date
+            SELECT
+                COUNT(*)
+            INTO cntfsalreadyexistcheck
+            FROM
+                flight_schedules
+            WHERE
+                    routes_routeid = input_route_id
+                AND dateoftravel = traveldate;
+
+            IF cntfsalreadyexistcheck > 0 THEN
+                RAISE invalid_data;
+            END IF;
+        
+        -- get the flight type using the input route id
+            SELECT
+                flighttype_flighttypeid
+            INTO ft_id
+            FROM
+                routes
+            WHERE
+                routeid = input_route_id;
+        
+        -- get totalnoofseats from flight type
+            SELECT
+                totalnoofseats
+            INTO availablenoofseats
+            FROM
+                flight_type
+            WHERE
+                flighttypeid = ft_id;
+
+            flight_sch_id := seq_fs.nextval;
+            INSERT INTO flight_schedules (
+                flight_schedule_id,
+                seatsavailable,
+                dateoftravel,
+                routes_routeid
+            ) VALUES (
+                flight_sch_id,
+                availablenoofseats,
+                traveldate,
+                input_route_id
+            );
+
+            COMMIT;
+            dbms_output.put_line('FLIGHT SCHEDULE ADDED SUCCCESSFULLY WITH ID ' || flight_sch_id);
+        END IF;
+
+    EXCEPTION
+        WHEN invalid_data THEN
+            dbms_output.put_line('INVALID DATA ENTERED');
+        WHEN OTHERS THEN
+            dbms_output.put_line(sqlerrm);
+    END;
+
 END pkg_airline;
 /
