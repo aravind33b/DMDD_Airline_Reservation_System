@@ -51,7 +51,8 @@ for i in (select 'SEQ_CUSTOMER' seq_name from dual union all
       select 'SEQ_BOOKING' seq_name from dual union all
       select 'SEQ_FLIGHT_SEAT_AVAILABILITY' seq_name from dual union all
       select 'SEQ_STATUS' seq_name from dual union all
-      select 'SEQ_PASSENGER' seq_name from dual
+      select 'SEQ_PASSENGER' seq_name from dual union all
+      select 'SEQ_FS' seq_name from dual
    )
    loop
    dbms_output.put_line('***Drop sequence '||i.seq_name||'***');
@@ -267,7 +268,9 @@ CREATE TABLE PASSENGER (
 
  -- CREATE SEQUENCE for PASSENGER TABLE
     CREATE SEQUENCE seq_passenger start with 381 increment by 1;
-    
+
+  -- CREATE SEQUENCE for FLIGHT_SCHEDULES TABLE
+    CREATE SEQUENCE seq_fs start with 45 increment by 1;
   -- Inserting values into the Customer table
 
 INSERT INTO CUSTOMER (CUSTOMERID, FIRSTNAME, LASTNAME, EMAIL, MOBILENO) 
