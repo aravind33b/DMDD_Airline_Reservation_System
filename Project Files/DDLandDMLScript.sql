@@ -1,20 +1,21 @@
 set serveroutput on
+
 declare
     v_table_exists varchar(1) := 'Y';
     v_sql varchar(2000);
 begin
    dbms_output.put_line('Start schema cleanup');
 for i in (select 'PASSENGER' table_name from dual union all
-             select 'BOOKING' table_name from dual union all
-             select 'CUSTOMER' table_name from dual union all
-             select 'PROMOTION' table_name from dual union all
              select 'STATUS' table_name from dual union all
+             select 'BOOKING' table_name from dual union all
+             select 'PROMOTION' table_name from dual union all
              select 'FLIGHT_SCHEDULES' table_name from dual union all
+             select 'FLIGHT_SEAT_AVAILABILITY' table_name from dual union all
+             select 'SEAT_TYPE' table_name from dual  union all
              select 'ROUTES' table_name from dual union all
              select 'AIRPORTS' table_name from dual union all
-             select 'FLIGHT_SEAT_AVAILABILITY' table_name from dual union all
              select 'FLIGHT_TYPE' table_name from dual union all
-             select 'SEAT_TYPE' table_name from dual  union all        
+             select 'CUSTOMER' table_name from dual
    )
    loop
    dbms_output.put_line('***Drop table '||i.table_name||'***');
@@ -39,6 +40,39 @@ exception
 end;
 
 /
+
+declare
+    v_seq_exists varchar(1) := 'Y';
+    v_sql varchar(2000);
+begin
+   dbms_output.put_line('Start sequence cleanup');
+for i in (select 'SEQ_CUSTOMER' seq_name from dual union all
+      select 'SEQ_ROUTE' seq_name from dual
+   )
+   loop
+   dbms_output.put_line('***Drop sequence '||i.seq_name||'***');
+   begin
+       select 'Y' into v_seq_exists
+       from user_sequences
+       where SEQUENCE_NAME=i.seq_name;
+
+       v_sql := 'drop sequence '||i.seq_name;
+       execute immediate v_sql;
+       dbms_output.put_line('.***Sequence '||i.seq_name||' dropped successfully***');
+       
+   exception
+       when no_data_found then
+           dbms_output.put_line('***Sequence already dropped***');
+   end;
+   end loop;
+   dbms_output.put_line('***Sequence cleanup successfully completed***');
+exception
+   when others then
+      dbms_output.put_line('***Failed to execute code:'||sqlerrm||'***');
+end;
+
+/
+
 -- Table Customer
 --------------------------------------------------------------------
 
@@ -203,6 +237,20 @@ CREATE TABLE PASSENGER (
     REFERENCES STATUS (StatusID)
     ON DELETE CASCADE);
 
+  -- GRANTING PRIVILEGES TO CUSTOMER
+  GRANT SELECT, INSERT, UPDATE ON CUSTOMER TO CUSTOMER;
+  GRANT SELECT ON FLIGHT_SCHEDULES TO CUSTOMER;
+  GRANT SELECT ON PROMOTION TO CUSTOMER;
+  GRANT SELECT ON SEAT_TYPE TO CUSTOMER;
+  GRANT SELECT, INSERT, UPDATE ON PASSENGER TO CUSTOMER;
+  GRANT SELECT,INSERT ON BOOKING TO CUSTOMER;
+
+
+ -- CREATE SEQUENCE for CUSTOMER TABLE
+   CREATE SEQUENCE seq_customer start with 26 increment by 1;
+
+ -- CREATE SEQUENCE for ROUTE TABLE
+   CREATE SEQUENCE seq_route start with 6 increment by 1;
 
   -- Inserting values into the Customer table
 
@@ -257,12 +305,15 @@ VALUES (24, 'Genevieve', 'Parker', 'Genevieve_Parker@yahoo.com', '8900435771');
 INSERT INTO CUSTOMER (CUSTOMERID, FIRSTNAME, LASTNAME, EMAIL, MOBILENO) 
 VALUES (25, 'Carroll', 'Murphy', 'Carroll_Murphy62@gmail.com', '7636236121');
 
+COMMIT;
 
 -- Inserting values into Flight_Type table
 INSERT INTO FLIGHT_TYPE (FLIGHTTYPEID, FLIGHTNAME, TOTALNOOFSEATS) 
 VALUES (1, 'A220', 75);
 INSERT INTO FLIGHT_TYPE (FLIGHTTYPEID, FLIGHTNAME, TOTALNOOFSEATS) 
 VALUES (2, 'A320', 100);
+
+COMMIT;
 
 -- Inserting values into the Airports table  
 INSERT INTO AIRPORTS (AIRPORTS_ID, STATE, CITY, AIRPORT_CODE, AIRPORT_LONGNAME) 
@@ -452,7 +503,7 @@ VALUES (92, 'Wisconsin', 'Madison', 'MSN', 'Dane County Regional Airport');
 INSERT INTO AIRPORTS (AIRPORTS_ID, STATE, CITY, AIRPORT_CODE, AIRPORT_LONGNAME) 
 VALUES (93, 'Wisconsin', 'Milwaukee', 'MKE', 'Milwaukee Mitchell International Airport');
 
-
+COMMIT;
 
 -- Inserting data into the ROUTES table
 INSERT INTO ROUTES (ROUTEID, ROUTENO, DEPARTURETIME, DURATIONOFTRAVELINMINUTES, FlightType_FlightTypeID, SOURCEAIRPORT, DESTINATIONAIRPORT) 
@@ -466,16 +517,21 @@ VALUES (4, 'JCP', '11:15', 442, 2, 21, 28);
 INSERT INTO ROUTES (ROUTEID, ROUTENO, DEPARTURETIME, DURATIONOFTRAVELINMINUTES, FlightType_FlightTypeID, SOURCEAIRPORT, DESTINATIONAIRPORT) 
 VALUES (5, 'CQC', '18:45', 130, 2, 46, 87);
 
+COMMIT;
+
 -- Inserting data into the Seat types table
 Insert into SEAT_TYPE (SEATTYPEID,SEATTYPENAME) values (1,'Economy');
 Insert into SEAT_TYPE (SEATTYPEID,SEATTYPENAME) values (2,'Business');
 
+COMMIT;
 
 -- Inserting data into the FLIGHT_SEAT_AVAILABILITY table
 Insert into FLIGHT_SEAT_AVAILABILITY (FLIGHTSEATAVAILABILITYID,NOOFSEATS,FLIGHTTYPE_FLIGHTTYPEID,SEAT_TYPE_SEATTYPEID) values (1,50,1,1);
 Insert into FLIGHT_SEAT_AVAILABILITY (FLIGHTSEATAVAILABILITYID,NOOFSEATS,FLIGHTTYPE_FLIGHTTYPEID,SEAT_TYPE_SEATTYPEID) values (2,25,1,2);
 Insert into FLIGHT_SEAT_AVAILABILITY (FLIGHTSEATAVAILABILITYID,NOOFSEATS,FLIGHTTYPE_FLIGHTTYPEID,SEAT_TYPE_SEATTYPEID) values (3,70,2,1);
 Insert into FLIGHT_SEAT_AVAILABILITY (FLIGHTSEATAVAILABILITYID,NOOFSEATS,FLIGHTTYPE_FLIGHTTYPEID,SEAT_TYPE_SEATTYPEID) values (4,30,2,2);
+
+COMMIT;
 
 -- Inserting data into FLIGHT_SCHEDULES table
 Insert into FLIGHT_SCHEDULES (FLIGHT_SCHEDULE_ID,SEATSAVAILABLE,DATEOFTRAVEL,ROUTES_ROUTEID) values (1,93,to_date('04-MAR-23','DD-MON-RR'),1);
@@ -523,12 +579,14 @@ Insert into FLIGHT_SCHEDULES (FLIGHT_SCHEDULE_ID,SEATSAVAILABLE,DATEOFTRAVEL,ROU
 Insert into FLIGHT_SCHEDULES (FLIGHT_SCHEDULE_ID,SEATSAVAILABLE,DATEOFTRAVEL,ROUTES_ROUTEID) values (43,97,to_date('18-APR-23','DD-MON-RR'),5);
 Insert into FLIGHT_SCHEDULES (FLIGHT_SCHEDULE_ID,SEATSAVAILABLE,DATEOFTRAVEL,ROUTES_ROUTEID) values (44,87,to_date('25-APR-23','DD-MON-RR'),5);
 
+COMMIT;
 -- Inserting data into PROMOTION table
 ---------------------------------------------------------------------------
 Insert into PROMOTION (PROMOTIONID,PROMOTIONNAME,PROMOTIONDESC,ACTIVE) values (1,'BofA',' For Bofa Platinum Members','Y');
 Insert into PROMOTION (PROMOTIONID,PROMOTIONNAME,PROMOTIONDESC,ACTIVE) values (2,'Chase',' For Chase Diamond Members','Y');
 Insert into PROMOTION (PROMOTIONID,PROMOTIONNAME,PROMOTIONDESC,ACTIVE) values (3,'Santander',' For Santander Gold Members','Y');
 
+COMMIT;
 -- Inserting data into BOOKING table
 ---------------------------------------------------------------------------
 Insert into BOOKING (BOOKINGID,PNR,DATEOFBOOKING,CUSTOMER_ID,PROMOTION_PROMOTIONID,SEAT_TYPE_SEATTYPEID,FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID) values (1,'BHIXM',to_date('29-JAN-23','DD-MON-RR'),18,1,1,1);
@@ -782,11 +840,14 @@ Insert into BOOKING (BOOKINGID,PNR,DATEOFBOOKING,CUSTOMER_ID,PROMOTION_PROMOTION
 Insert into BOOKING (BOOKINGID,PNR,DATEOFBOOKING,CUSTOMER_ID,PROMOTION_PROMOTIONID,SEAT_TYPE_SEATTYPEID,FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID) values (249,'WKLYC',to_date('22-FEB-23','DD-MON-RR'),13,2,2,44);
 Insert into BOOKING (BOOKINGID,PNR,DATEOFBOOKING,CUSTOMER_ID,PROMOTION_PROMOTIONID,SEAT_TYPE_SEATTYPEID,FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID) values (250,'DAQHC',to_date('07-FEB-23','DD-MON-RR'),2,3,2,44);
 
+COMMIT;
 
 -- Data for table Status
 -- -----------------------------------------------------
 Insert into STATUS (STATUSID,STATUS) values (1,'Booked');
 Insert into STATUS (STATUSID,STATUS) values (2,'Cancelled');
+
+COMMIT;
 
 -- Data for table Passenger
 -- -----------------------------------------------------
@@ -1171,6 +1232,7 @@ Insert into PASSENGER (PASSENGERID,FIRSTNAME,LASTNAME,EMAIL,PHONENO,AGE,GENDER,B
 Insert into PASSENGER (PASSENGERID,FIRSTNAME,LASTNAME,EMAIL,PHONENO,AGE,GENDER,BOOKING_BOOKINGID,STATUS_STATUSID) values (203,'Ruben','Okuneva','Ruben.Okuneva34@hotmail.com','6849079568',17,'M',130,1);
 Insert into PASSENGER (PASSENGERID,FIRSTNAME,LASTNAME,EMAIL,PHONENO,AGE,GENDER,BOOKING_BOOKINGID,STATUS_STATUSID) values (204,'Audrey','Kohler','Audrey_Kohler@yahoo.com','1025161269',40,'F',131,1);
 
+COMMIT;
 -- -----------------------------------------------------
 -- Top Flights Operational Today VIEW
 -- -----------------------------------------------------
@@ -1198,28 +1260,40 @@ create or replace view Passenger_Travelling_Today as
 select * from passenger where BOOKING_BOOKINGID in 
 (select BOOKINGID from booking where FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID = 
 (select FLIGHT_SCHEDULE_ID from flight_schedules where dateoftravel = 
-(select to_char(to_date(sysdate)) from dual)));
-/
+(select to_char(to_date(sysdate)) from dual))) AND STATUS_STATUSID=1 ;
+
+
+------------------------------------------------------------
+-- Number of passengers traveling per quarter VIEW
+------------------------------------------------------------
+create or replace view Passengers_travelling_per_quarter as
+SELECT COUNT(*) "No of Passengers", QUARTER FROM
+(SELECT 'Quarter ' || to_char(fs.DATEOFTRAVEL, 'Q') QUARTER FROM PASSENGER p
+INNER JOIN BOOKING b ON p.BOOKING_BOOKINGID = b.BOOKINGID
+INNER JOIN FLIGHT_SCHEDULES fs on fs.FLIGHT_SCHEDULE_ID = b.FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID
+WHERE EXTRACT(YEAR FROM DATEOFTRAVEL)= EXTRACT(YEAR FROM sysdate) AND p.STATUS_STATUSID=1)
+GROUP BY QUARTER;
 
 ------------------------------------------------------------
 -- Seat Distribution VIEW
 ------------------------------------------------------------
 CREATE OR REPLACE VIEW SeatDistribution as 
-Select f.FLIGHTNAME, s.SEATTYPENAME,  fs.NOOFSEATS from FLIGHT_TYPE  f
+Select f.FLIGHTNAME "FLIGHT TYPE", s.SEATTYPENAME "SEAT TYPE",  fs.NOOFSEATS "Number of Seats" from FLIGHT_TYPE  f
 inner join FLIGHT_SEAT_AVAILABILITY  fs on 
 f.FLIGHTTYPEID = fs.FLIGHTTYPE_FLIGHTTYPEID
 inner join SEAT_TYPE s on
 s.SEATTYPEID = fs.SEAT_TYPE_SEATTYPEID;
 
-
 ------------------------------------------------------------
 -- Flights Operational Today VIEW
 ------------------------------------------------------------
 CREATE OR REPLACE VIEW FlightsOperationalToday AS
-SELECT *
-FROM FLIGHT_SCHEDULES
+SELECT r.ROUTENO "ROUTE NO", src.AIRPORT_LONGNAME "SOURCE AIRPORT", src.CITY "SOURCE CITY", dest.AIRPORT_LONGNAME "DESTINATION AIRPORT", dest.CITY "DESTINATION CITY", r.DEPARTURETIME "DEPARTURE TIME"
+FROM FLIGHT_SCHEDULES fs
+INNER JOIN ROUTES r ON fs.ROUTES_ROUTEID = r.ROUTEID
+INNER JOIN AIRPORTS src ON r.SOURCEAIRPORT = src.AIRPORTS_ID
+INNER JOIN AIRPORTS dest ON r.DESTINATIONAIRPORT = dest.AIRPORTS_ID
 WHERE TRUNC(DateOfTravel) = TRUNC(SYSDATE);
-
 
 ------------------------------------------------------------
 -- Top Routes with Vacant Seats VIEW
@@ -1230,7 +1304,7 @@ FROM ROUTES r
 INNER JOIN FLIGHT_TYPE ft ON r.FlightType_FlightTypeID = ft.FLIGHTTYPEID
 INNER JOIN FLIGHT_SCHEDULES fs ON r.ROUTEID = fs.ROUTES_ROUTEID
 WHERE fs.SEATSAVAILABLE / ft.TOTALNOOFSEATS > 0.5
-ORDER BY (fs.SEATSAVAILABLE / ft.TOTALNOOFSEATS) DESC;
+ORDER BY (fs.SEATSAVAILABLE / ft.TOTALNOOFSEATS) DESC FETCH FIRST 10 ROWS WITH TIES;
 
 ------------------------------------------------------------
 -- Passenger Traffic by Source State VIEW
@@ -1244,8 +1318,7 @@ join flight_schedules f on r.routeid = f.routes_routeid
 join booking b on f.flight_schedule_id = b.flight_schedules_flight_schedule_id
 join passenger p on b.bookingid = p.booking_bookingid
 )
-SELECT state, count(passengerid) passenger_count FROM temp group by state order by passenger_count DESC;
-
+SELECT state, count(passengerid) "Passenger Count" FROM temp group by state order by "Passenger Count" DESC FETCH FIRST 10 ROWS WITH TIES;
 
 ------------------------------------------------------------
 -- Passenger Traffic by Destination State VIEW
@@ -1259,4 +1332,58 @@ join flight_schedules f on r.routeid = f.routes_routeid
 join booking b on f.flight_schedule_id = b.flight_schedules_flight_schedule_id
 join passenger p on b.bookingid = p.booking_bookingid
 )
-SELECT state, count(passengerid) passenger_count FROM temp group by state order by passenger_count DESC;
+SELECT state, count(passengerid) "Passenger Count" FROM temp group by state order by "Passenger Count" DESC FETCH FIRST 10 ROWS WITH TIES;
+
+-- ------------------------------------------------------------
+-- Frequent Users VIEW
+------------------------------------------------------------
+create or replace view Frequent_Users as
+Select b.Customer_ID "CUSTOMER ID", COUNT(b.BOOKINGID) "No. of Bookings Made", C.FirstName "FIRST NAME", C.LastName "LAST NAME" FROM CUSTOMER C
+INNER JOIN BOOKING b ON c.CustomerID = b.CUSTOMER_ID
+GROUP BY (b.Customer_ID, C.FirstName, C.LastName)
+ORDER BY Count(b.BOOKINGID) DESC FETCH FIRST 10 ROWS WITH TIES;
+
+------------------------------------------------------------
+-- Top Routes in a Year VIEW
+------------------------------------------------------------
+
+create or replace view Top_Routes_This_Year as
+Select COUNT(*) "No. of Passengers travelled in past Year", r.RouteNo "Route No.", src.Airport_LongName "Source", dst.Airport_LongName "Destination" FROM BOOKING b
+INNER JOIN PASSENGER p ON p.BOOKING_BOOKINGID = b.BOOKINGID
+INNER JOIN FLIGHT_SCHEDULES fs ON b.FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID = fs.FLIGHT_SCHEDULE_ID
+INNER JOIN ROUTES r ON r.RouteID = fs.ROUTES_RouteID
+INNER JOIN AIRPORTS src ON src.Airports_ID = r.SourceAirport
+INNER JOIN AIRPORTS dst ON dst.Airports_ID = r.DestinationAirport
+WHERE fs.DateOfTravel <= SYSDATE AND fs.DateOfTravel >= ADD_MONTHS(SYSDATE, -12)
+GROUP BY (r.RouteNo, r.SourceAirport, r.DestinationAirport, src.Airport_LongName, dst.Airport_LongName)
+ORDER BY Count(*) DESC FETCH FIRST 10 ROWS WITH TIES;
+
+------------------------------------------------------------
+-- Top Routes in a Month VIEW
+------------------------------------------------------------
+
+create or replace view Top_Routes_This_Month as
+Select COUNT(*) "No. of Passengers travelled in past 30 days" , r.RouteNo "Route No.", src.Airport_LongName "Source", dst.Airport_LongName "Destination" FROM BOOKING b
+INNER JOIN PASSENGER p ON p.BOOKING_BOOKINGID = b.BOOKINGID
+INNER JOIN FLIGHT_SCHEDULES fs ON b.FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID = fs.FLIGHT_SCHEDULE_ID
+INNER JOIN ROUTES r ON r.RouteID = fs.ROUTES_RouteID
+INNER JOIN AIRPORTS src ON src.Airports_ID = r.SourceAirport
+INNER JOIN AIRPORTS dst ON dst.Airports_ID = r.DestinationAirport
+WHERE fs.DateOfTravel <= SYSDATE AND fs.DateOfTravel >= ADD_MONTHS(SYSDATE, -1)
+GROUP BY (r.RouteNo, r.SourceAirport, r.DestinationAirport, src.Airport_LongName, dst.Airport_LongName)
+ORDER BY Count(*) DESC FETCH FIRST 10 ROWS WITH TIES;
+
+------------------------------------------------------------
+-- Top Routes in a Day VIEW
+------------------------------------------------------------
+
+create or replace view Top_Routes_Today as
+Select COUNT(*) "No. of Passengers Today", r.RouteNo "Route No.", src.Airport_LongName "Source", dst.Airport_LongName "Destination" FROM BOOKING b
+INNER JOIN PASSENGER p ON p.BOOKING_BOOKINGID = b.BOOKINGID
+INNER JOIN FLIGHT_SCHEDULES fs ON b.FLIGHT_SCHEDULES_FLIGHT_SCHEDULE_ID = fs.FLIGHT_SCHEDULE_ID
+INNER JOIN ROUTES r ON r.RouteID = fs.ROUTES_RouteID
+INNER JOIN AIRPORTS src ON src.Airports_ID = r.SourceAirport
+INNER JOIN AIRPORTS dst ON dst.Airports_ID = r.DestinationAirport
+WHERE fs.DateOfTravel = TRUNC(SYSDATE)
+GROUP BY (r.RouteNo, r.SourceAirport, r.DestinationAirport, src.Airport_LongName, dst.Airport_LongName)
+ORDER BY Count(*) DESC FETCH FIRST 10 ROWS WITH TIES;
