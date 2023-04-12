@@ -22,6 +22,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
         cntcustomer NUMBER;
         cntfs       NUMBER;
         cntpromo    NUMBER;
+        cntst       NUMBER;
         pnr         VARCHAR(6);
         fs_date     DATE;
         invalid_dateoftravel EXCEPTION;
@@ -48,13 +49,24 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
         FROM
             promotion
         WHERE
-            promotionid = input_promotionid;
+                promotionid = input_promotionid
+            AND active = 'Y';
+
+        SELECT
+            COUNT(*)
+        INTO cntst
+        FROM
+            seat_type
+        WHERE
+            seattypeid = input_stid;
 
         IF cntcustomer = 0 THEN
             RAISE invalid_data;
         ELSIF cntfs = 0 THEN
             RAISE invalid_data;
         ELSIF cntpromo = 0 THEN
+            RAISE invalid_data;
+        ELSIF cntst = 0 THEN
             RAISE invalid_data;
         ELSE
             pnr := dbms_random.string('U', 6);
