@@ -47,7 +47,10 @@ declare
 begin
    dbms_output.put_line('Start sequence cleanup');
 for i in (select 'SEQ_CUSTOMER' seq_name from dual union all
-      select 'SEQ_ROUTE' seq_name from dual
+      select 'SEQ_ROUTE' seq_name from dual union all
+      select 'SEQ_BOOKING' seq_name from dual union all
+      select 'SEQ_FLIGHT_SEAT_AVAILABILITY' seq_name from dual union all
+      select 'SEQ_STATUS' seq_name from dual
    )
    loop
    dbms_output.put_line('***Drop sequence '||i.seq_name||'***');
@@ -252,6 +255,15 @@ CREATE TABLE PASSENGER (
  -- CREATE SEQUENCE for ROUTE TABLE
    CREATE SEQUENCE seq_route start with 6 increment by 1;
 
+ -- CREATE SEQUENCE for BOOKING TABLE
+   CREATE SEQUENCE seq_booking start with 251 increment by 1;
+   
+ -- CREATE SEQUENCE for FLIGHT_SEAT_AVAILABILITY TABLE
+    CREATE SEQUENCE seq_flight_seat_availability start with 5 increment by 1;
+    
+ -- CREATE SEQUENCE for STATUS TABLE
+    CREATE SEQUENCE seq_status start with 3 increment by 1;
+    
   -- Inserting values into the Customer table
 
 INSERT INTO CUSTOMER (CUSTOMERID, FIRSTNAME, LASTNAME, EMAIL, MOBILENO) 
