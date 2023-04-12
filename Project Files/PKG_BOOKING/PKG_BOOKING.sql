@@ -36,7 +36,9 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
         cntst       NUMBER;
         pnr         VARCHAR(6);
         fs_date     DATE;
+        fs_rec      flight_schedules%rowtype;
         invalid_dateoftravel EXCEPTION;
+        insufficient_seats EXCEPTION;
     BEGIN
         SELECT
             COUNT(*)
@@ -71,7 +73,17 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
         WHERE
             seattypeid = input_stid;
 
-        IF cntcustomer = 0 THEN
+        SELECT
+            *
+        INTO fs_rec
+        FROM
+            flight_schedules
+        WHERE
+            flight_schedule_id = input_fsid;
+
+        IF fs_rec.seatsavailable = 0 THEN
+            RAISE insufficient_seats;
+        ELSIF cntcustomer = 0 THEN
             RAISE invalid_data;
         ELSIF cntfs = 0 THEN
             RAISE invalid_data;
@@ -119,6 +131,8 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             dbms_output.put_line('INVALID DATA ENTERED');
         WHEN invalid_dateoftravel THEN
             dbms_output.put_line('INVALID Date of Travel ENTERED');
+        WHEN insufficient_seats THEN
+            dbms_output.put_line('NO SEATS LEFT');
         WHEN OTHERS THEN
             dbms_output.put_line(sqlerrm);
     END;
@@ -133,9 +147,13 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
         input_bookingid passenger.booking_bookingid%TYPE,
         input_statusid  passenger.status_statusid%TYPE
     ) AS
+
         cntbooking      NUMBER;
         cntstatus       NUMBER;
         seq_passengerid NUMBER;
+        booking_rec     booking%rowtype;
+        fs_rec          flight_schedules%rowtype;
+        insufficient_seats EXCEPTION;
     BEGIN
         SELECT
             COUNT(*)
@@ -170,36 +188,68 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
         ELSIF input_gender IS NULL OR length(input_gender) = 0 THEN
             RAISE invalid_data;
         ELSE
-            seq_passengerid := seq_passenger.nextval;
-            INSERT INTO passenger (
-                passengerid,
-                firstname,
-                lastname,
-                email,
-                phoneno,
-                age,
-                gender,
-                booking_bookingid,
-                status_statusid
-            ) VALUES (
-                seq_passengerid,
-                input_fn,
-                input_ln,
-                input_email,
-                input_phoneno,
-                input_age,
-                input_gender,
-                input_bookingid,
-                input_statusid
-            );
+            -- verify seats exist
+            -- get booking rec
+            SELECT
+                *
+            INTO booking_rec
+            FROM
+                booking
+            WHERE
+                bookingid = input_bookingid;
+                
+-- get flight schedule rec
+            SELECT
+                *
+            INTO fs_rec
+            FROM
+                flight_schedules
+            WHERE
+                flight_schedule_id = booking_rec.flight_schedules_flight_schedule_id;
 
-            COMMIT;
-            dbms_output.put_line('PASSENGER ADDED SUCCCESSFULLY WITH ID ' || seq_passengerid);
+            IF fs_rec.seatsavailable = 0 THEN
+                RAISE insufficient_seats;
+            ELSE
+                seq_passengerid := seq_passenger.nextval;
+                INSERT INTO passenger (
+                    passengerid,
+                    firstname,
+                    lastname,
+                    email,
+                    phoneno,
+                    age,
+                    gender,
+                    booking_bookingid,
+                    status_statusid
+                ) VALUES (
+                    seq_passengerid,
+                    input_fn,
+                    input_ln,
+                    input_email,
+                    input_phoneno,
+                    input_age,
+                    input_gender,
+                    input_bookingid,
+                    input_statusid
+                );
+
+                UPDATE flight_schedules
+                SET
+                    seatsavailable = seatsavailable - 1
+                WHERE
+                    flight_schedule_id = booking_rec.flight_schedules_flight_schedule_id;
+
+                COMMIT;
+                dbms_output.put_line('PASSENGER ADDED SUCCCESSFULLY WITH ID ' || seq_passengerid);
+            END IF;
+
         END IF;
 
     EXCEPTION
         WHEN invalid_data THEN
             dbms_output.put_line('INVALID DATA ENTERED');
+        WHEN insufficient_seats THEN
+            dbms_output.put_line('NO SEATS LEFT');
         WHEN OTHERS THEN
             dbms_output.put_line(sqlerrm);
     END;
