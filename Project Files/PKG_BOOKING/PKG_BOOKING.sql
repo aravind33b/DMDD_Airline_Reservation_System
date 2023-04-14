@@ -1,10 +1,9 @@
 CREATE OR REPLACE PACKAGE pkg_booking AS
     TYPE passenger_array IS
         TABLE OF passenger%rowtype INDEX BY BINARY_INTEGER;
-    
     PROCEDURE passenger_cancel (
         input_passenger_id passenger.passengerid%TYPE,
-        bool_commit    BOOLEAN
+        bool_commit        BOOLEAN
     );
 
     PROCEDURE booking_cancel (
@@ -24,6 +23,9 @@ END pkg_booking;
 
 CREATE OR REPLACE PACKAGE BODY pkg_booking AS
 
+/*    
+ *** booking_add *** /
+*/
     PROCEDURE booking_add (
         input_customerid  booking.customer_id%TYPE,
         input_promotionid booking.promotion_promotionid%TYPE,
@@ -135,7 +137,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             );
 
 --            COMMIT;
-            dbms_output.put_line('BOOKING ADDED SUCCCESSFULLY WITH PNR ' || pnr);
+            dbms_output.put_line('BOOKING ADDED SUCCCESSFULLY WITH PNR ' || pnr || ' AND ID ' || booking_id);
         END IF;
 
     EXCEPTION
@@ -152,7 +154,9 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             dbms_output.put_line(sqlerrm);
             RAISE;
     END;
-
+/*    
+ *** passenger_add *** /
+*/
     PROCEDURE passenger_add (
         input_fn        passenger.firstname%TYPE,
         input_ln        passenger.lastname%TYPE,
@@ -280,13 +284,88 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             dbms_output.put_line(sqlerrm);
             RAISE;
     END;
+    
+/*    
+ *** get_number_of_seats_by_seat_type_flight *** /
+*/
+    FUNCTION get_no_available_seats_by_seat_type_flight (
+        input_fs_id flight_schedules.flight_schedule_id%TYPE,
+        input_st_id NUMBER
+    ) RETURN NUMBER IS
 
+        no_of_seats          NUMBER;
+        rt_rec               routes%rowtype;
+        ft_rec               flight_type%rowtype;
+        fs_rec               flight_schedules%rowtype;
+        no_of_seats_seattype NUMBER;
+        no_of_seats_booked   NUMBER;
+    BEGIN
+        -- FETCH FLIGHT SCHEDULE RECORD
+        SELECT
+            *
+        INTO fs_rec
+        FROM
+            flight_schedules
+        WHERE
+            flight_schedule_id = input_fs_id;
+        -- FETCH ROUTE RECORD
+        SELECT
+            *
+        INTO rt_rec
+        FROM
+            routes
+        WHERE
+            routeid = fs_rec.routes_routeid;
+            -- FETCH FLIGHT TYPE RECORD
+        SELECT
+            *
+        INTO ft_rec
+        FROM
+            flight_type
+        WHERE
+            flighttypeid = rt_rec.flighttype_flighttypeid;
+            
+            -- FETCH TOTAL NUMBER OF SEATS FOR SEAT TYPE
+        SELECT
+            noofseats
+        INTO no_of_seats_seattype
+        FROM
+            flight_seat_availability
+        WHERE
+                flighttype_flighttypeid = ft_rec.flighttypeid
+            AND seat_type_seattypeid = input_st_id;
+            
+            -- FETCH NO OF PASSENGERS/ BOOKED SEATS
+        SELECT
+            COUNT(*)
+        INTO no_of_seats_booked
+        FROM
+            passenger
+        WHERE
+            booking_bookingid IN (
+                SELECT
+                    bookingid
+                FROM
+                    booking
+                WHERE
+                        flight_schedules_flight_schedule_id = input_fs_id
+                    AND seat_type_seattypeid = input_st_id
+            )
+            AND status_statusid = 1;
+
+        RETURN ( no_of_seats_seattype - no_of_seats_booked );
+    END;
+    
+
+/*    
+ *** booking_with_passengers *** /
+*/
     PROCEDURE booking_with_passengers (
         input_booking         booking%rowtype,
         input_passenger_array passenger_array
     ) AS
 
-        cntretry              NUMBER := 3;
+        cntretry              NUMBER := 1;
         no_of_passengers      NUMBER;
         fs_rec                flight_schedules%rowtype;
         cnt_st_check          NUMBER;
@@ -295,11 +374,8 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
         cnt_promo_check       NUMBER;
         fs_date               DATE;
         booking_id            NUMBER;
-        rt_rec                routes%rowtype;
-        ft_rec                flight_type%rowtype;
-        no_of_seats_seattype  NUMBER;
-        no_of_seats_booked    NUMBER;
-        no_of_seats_remaining NUMBER;
+        availableseats_flag   NUMBER;
+        maximum_retry_reached EXCEPTION;
     BEGIN
         dbms_output.put_line('*** START BOOKING WITH PASSENGERS ***');
         -- CHECKING IF VALID CUSTOMER
@@ -338,8 +414,13 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             seat_type
         WHERE
             seattypeid = input_booking.seat_type_seattypeid;
+        
+        -- CHECKING IF NO PASSENGERS ARE ADDED
 
-        IF cnt_customer_check = 0 THEN
+        IF input_passenger_array IS NULL OR input_passenger_array.count = 0 THEN
+            dbms_output.put_line('ERROR : NO PASSENGERS HAVE BEEN PASSED');
+            RAISE invalid_data;
+        ELSIF cnt_customer_check = 0 THEN
             dbms_output.put_line('ERROR : NO CUSTOMER EXISTS FOR GIVEN ID');
             RAISE invalid_data;
         ELSIF cnt_fs_check = 0 THEN
@@ -352,18 +433,15 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             dbms_output.put_line('ERROR : NO SEAT TYPE EXISTS FOR GIVEN ID');
             RAISE invalid_data;
         END IF;
-
---        FOR c IN REVERSE 1..cntretry LOOP
-        no_of_passengers := input_passenger_array.count;
-            -- CHECKING IF FS DATE IS VALID AND ANY SEATS ARE AVAILBLE AND LOCKING THE FS ROW FOR UPDATE
+        
+        -- CHECKING IF FS DATE IS VALID AND ANY SEATS ARE AVAILBLE
         SELECT
             *
         INTO fs_rec
         FROM
             flight_schedules
         WHERE
-            flight_schedule_id = input_booking.flight_schedules_flight_schedule_id
-        FOR UPDATE;
+            flight_schedule_id = input_booking.flight_schedules_flight_schedule_id;
         
             -- CHECKING IF FLIGHT DATE IS IN PAST
         IF fs_rec.dateoftravel < sysdate THEN
@@ -375,91 +453,93 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             dbms_output.put_line('INFO : NO SEATS LEFT');
             RAISE insufficient_seats;
         END IF;
+
+        LOOP
+            no_of_passengers := input_passenger_array.count;
+            SELECT
+                *
+            INTO fs_rec
+            FROM
+                flight_schedules
+            WHERE
+                flight_schedule_id = input_booking.flight_schedules_flight_schedule_id;
+
+            availableseats_flag := fs_rec.seatsavailable;
         
-            -- CHECKING IF SEATS FOR GIVEN SEAT TYPE ARE AVAILABLE
-            -- FETCH ROUTE RECORD
-        SELECT
-            *
-        INTO rt_rec
-        FROM
-            routes
-        WHERE
-            routeid = fs_rec.routes_routeid;
-            -- FETCH FLIGHT TYPE RECORD
-        SELECT
-            *
-        INTO ft_rec
-        FROM
-            flight_type
-        WHERE
-            flighttypeid = rt_rec.flighttype_flighttypeid;
-            
-            -- FETCH TOTAL NUMBER OF SEATS FOR SEAT TYPE
-        SELECT
-            noofseats
-        INTO no_of_seats_seattype
-        FROM
-            flight_seat_availability
-        WHERE
-                flighttype_flighttypeid = ft_rec.flighttypeid
-            AND seat_type_seattypeid = input_booking.seat_type_seattypeid;
-            
-            -- FETCH NO OF PASSENGERS/ BOOKED SEATS
-        SELECT
-            COUNT(*)
-        INTO no_of_seats_booked
-        FROM
-            passenger
-        WHERE
-            booking_bookingid IN (
-                SELECT
-                    bookingid
-                FROM
-                    booking
-                WHERE
-                        flight_schedules_flight_schedule_id = input_booking.flight_schedules_flight_schedule_id
-                    AND seat_type_seattypeid = input_booking.seat_type_seattypeid
-            )
-            AND status_statusid = 1;
-            
+            -- CHECKING IF SEATS FOR GIVEN SEAT TYPE ARE AVAILABLE           
             -- IF NO SEATS LEFT THEN RAISE EXCEPTION
-        no_of_seats_remaining := no_of_seats_seattype - no_of_seats_booked;
-        IF no_of_seats_remaining < no_of_passengers THEN
-            dbms_output.put_line('INFO : NO SEATS LEFT');
-            RAISE insufficient_seats;
-        END IF;
+            IF get_no_available_seats_by_seat_type_flight(input_booking.flight_schedules_flight_schedule_id, input_booking.seat_type_seattypeid
+            ) < no_of_passengers THEN
+                dbms_output.put_line('INFO : NO SEATS LEFT');
+                RAISE insufficient_seats;
+            END IF;
         
         -- INSERT INTO BOOKING TABLE
-        BEGIN
-            booking_add(input_booking.customer_id, input_booking.promotion_promotionid, input_booking.seat_type_seattypeid, input_booking.flight_schedules_flight_schedule_id
-            , booking_id);
+            BEGIN
+                booking_add(input_booking.customer_id, input_booking.promotion_promotionid, input_booking.seat_type_seattypeid, input_booking.flight_schedules_flight_schedule_id
+                , booking_id);
 
-            dbms_output.put_line('BOOKING ID IS ' || booking_id);
-        END;
+                dbms_output.put_line('BOOKING ID IS ' || booking_id);
+            END;
 
-        FOR i IN 1..input_passenger_array.count LOOP
-            dbms_output.put_line('**START INSERT PASSENGER**');
-            passenger_add(input_passenger_array(i).firstname, input_passenger_array(i).lastname, input_passenger_array(i).email, input_passenger_array
-            (i).phoneno, input_passenger_array(i).age,
-                         input_passenger_array(i).gender, booking_id, 1);
+            FOR i IN 1..input_passenger_array.count LOOP
+                dbms_output.put_line('**START INSERT PASSENGER**');
+                passenger_add(input_passenger_array(i).firstname, input_passenger_array(i).lastname, input_passenger_array(i).email, input_passenger_array
+                (i).phoneno, input_passenger_array(i).age,
+                             input_passenger_array(i).gender, booking_id, 1);
 
-            dbms_output.put_line('**PASSENGER '
-                                 || input_passenger_array(i).firstname
-                                 || ' '
-                                 || input_passenger_array(i).lastname
-                                 || ' WAS ADDED **');
+                dbms_output.put_line('**PASSENGER '
+                                     || input_passenger_array(i).firstname
+                                     || ' '
+                                     || input_passenger_array(i).lastname
+                                     || ' WAS ADDED **');
 
+            END LOOP;
+
+            SAVEPOINT retry_flight_update_savepoint;
+            UPDATE flight_schedules
+            SET
+                seatsavailable = seatsavailable - no_of_passengers
+            WHERE
+                    flight_schedule_id = input_booking.flight_schedules_flight_schedule_id
+                AND seatsavailable = availableseats_flag;
+            
+            -- IF CONCURRENT BOOKING IS DETECTED RETRY FOR SPECIFFIED NUMBER OF TIMES
+            IF SQL%rowcount = 0 THEN
+                dbms_output.put_line(' CONCURRENCY DETECTED. WILL RETRY TO BOOK');
+                IF cntretry > 3 THEN
+                    RAISE maximum_retry_reached;
+                ELSE
+                    cntretry := cntretry + 1;
+                    SELECT
+                        seatsavailable
+                    INTO availableseats_flag
+                    FROM
+                        flight_schedules
+                    WHERE
+                        flight_schedule_id = input_booking.flight_schedules_flight_schedule_id;
+
+                    IF availableseats_flag = 0 OR availableseats_flag < no_of_passengers THEN
+                        dbms_output.put_line('INFO : NO SEATS LEFT');
+                        RAISE insufficient_seats;
+                    END IF;
+
+                    IF get_no_available_seats_by_seat_type_flight(input_booking.flight_schedules_flight_schedule_id, input_booking.seat_type_seattypeid
+                    ) < no_of_passengers THEN
+                        dbms_output.put_line('INFO : NO SEATS LEFT');
+                        RAISE insufficient_seats;
+                    END IF;
+
+                    ROLLBACK TO retry_flight_update_savepoint;
+                END IF;
+
+            ELSE
+                COMMIT;
+                EXIT;
+            END IF;
+
+            dbms_output.put_line(NULL);
         END LOOP;
-
-        UPDATE flight_schedules
-        SET
-            seatsavailable = seatsavailable - no_of_passengers
-        WHERE
-            flight_schedule_id = input_booking.flight_schedules_flight_schedule_id;
-
-        COMMIT;
-        dbms_output.put_line(NULL);
---        END LOOP;
 
     EXCEPTION
         WHEN invalid_data THEN
@@ -474,21 +554,27 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             dbms_output.put_line('TRYING TO BOOK FOR PAST FLIGHT');
             dbms_output.put_line(NULL);
             ROLLBACK;
-        WHEN OTHERS THEN
-            dbms_output.put_line('TRYING TO BOOK FOR PAST FLIGHT');
+        WHEN maximum_retry_reached THEN
+            dbms_output.put_line('MAXIMUM NO OF RETRIES HAVE BEEN REACHED. PLEASE TRY AGAIN');
             dbms_output.put_line(NULL);
+            ROLLBACK;
+        WHEN OTHERS THEN
+            dbms_output.put_line(sqlerrm);
+            dbms_output.put_line(NULL);
+            ROLLBACK;
     END;
-
+    
+/*    
+ *** PASSENGER_CANCEL *** /
+*/
     PROCEDURE passenger_cancel (
         input_passenger_id passenger.passengerid%TYPE,
-        bool_commit    BOOLEAN
+        bool_commit        BOOLEAN
     ) AS
-
         pass_rec       passenger%rowtype;
         book_rec       booking%rowtype;
         cnt_pass_check NUMBER;
         flight_rec     flight_schedules%rowtype;
-      
     BEGIN
         SELECT
             COUNT(*)
@@ -563,7 +649,9 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             dbms_output.put_line(NULL);
             ROLLBACK;
     END;
-
+/*
+ *** BOOKING CANCEL *** /
+*/
     PROCEDURE booking_cancel (
         input_booking_id booking.bookingid%TYPE
     ) AS
@@ -629,7 +717,8 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
 
             passenger_cancel(p.passengerid, false);
         END LOOP;
-    COMMIT;
+
+        COMMIT;
     EXCEPTION
         WHEN invalid_data THEN
             dbms_output.put_line('INVALID DATA ENTERED. WE ARE ROLLING BACK YOUR TRANSACTION.');
@@ -637,6 +726,8 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             ROLLBACK;
         WHEN invalid_dateoftravel THEN
             dbms_output.put_line('TRYING TO CANCEL FOR PAST FLIGHT');
+            dbms_output.put_line(NULL);
+            ROLLBACK;
         WHEN OTHERS THEN
             dbms_output.put_line(sqlerrm);
             dbms_output.put_line(NULL);

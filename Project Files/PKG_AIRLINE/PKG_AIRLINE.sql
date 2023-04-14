@@ -48,6 +48,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_airline AS
     ) IS
         cntflighttype NUMBER;
         routeno       VARCHAR(3);
+        route_id NUMBER;
     BEGIN
         SELECT
             COUNT(*)
@@ -67,6 +68,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_airline AS
             RAISE invalid_data;
         ELSE
             routeno := dbms_random.string('U', 3);
+            route_id := seq_route.NEXTVAL;
             INSERT INTO routes (
                 routeid,
                 routeno,
@@ -76,7 +78,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_airline AS
                 sourceairport,
                 destinationairport
             ) VALUES (
-                seq_route.NEXTVAL,
+                route_id,
                 routeno,
                 departuretime,
                 durationmin,
@@ -86,7 +88,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_airline AS
             );
 
             COMMIT;
-            dbms_output.put_line('ROUTE ADDED SUCCCESSFULLY');
+            dbms_output.put_line('ROUTE ADDED SUCCCESSFULLY WITH ROUTE NO ' || routeno || ' WITH ROUTE ID ' || route_id );
         END IF;
 
     EXCEPTION
