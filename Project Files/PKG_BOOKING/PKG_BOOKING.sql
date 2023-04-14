@@ -1,23 +1,14 @@
 CREATE OR REPLACE PACKAGE pkg_booking AS
     TYPE passenger_array IS
         TABLE OF passenger%rowtype INDEX BY BINARY_INTEGER;
-    PROCEDURE booking_add (
-        input_customerid  booking.customer_id%TYPE,
-        input_promotionid booking.promotion_promotionid%TYPE,
-        input_stid        booking.seat_type_seattypeid%TYPE,
-        input_fsid        booking.flight_schedules_flight_schedule_id%TYPE,
-        booking_id        OUT booking.bookingid%TYPE
+    
+    PROCEDURE passenger_cancel (
+        input_passenger_id passenger.passengerid%TYPE,
+        bool_commit    BOOLEAN
     );
 
-    PROCEDURE passenger_add (
-        input_fn        passenger.firstname%TYPE,
-        input_ln        passenger.lastname%TYPE,
-        input_email     passenger.email%TYPE,
-        input_phoneno   passenger.phoneno%TYPE,
-        input_age       passenger.age%TYPE,
-        input_gender    passenger.gender%TYPE,
-        input_bookingid passenger.booking_bookingid%TYPE,
-        input_statusid  passenger.status_statusid%TYPE
+    PROCEDURE booking_cancel (
+        input_booking_id booking.bookingid%TYPE
     );
 
     PROCEDURE booking_with_passengers (
@@ -88,16 +79,16 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             seattypeid = input_stid;
 
         IF cntcustomer = 0 THEN
-        dbms_output.put_line('ERROR : NO CUSTOMER EXISTS FOR GIVEN ID');
+            dbms_output.put_line('ERROR : NO CUSTOMER EXISTS FOR GIVEN ID');
             RAISE invalid_data;
         ELSIF cntfs = 0 THEN
-        dbms_output.put_line('ERROR : NO FLIGHT EXISTS FOR GIVEN ID');
+            dbms_output.put_line('ERROR : NO FLIGHT EXISTS FOR GIVEN ID');
             RAISE invalid_data;
         ELSIF cntpromo = 0 THEN
-        dbms_output.put_line('ERROR : NO ACTIVE PROMOTION EXISTS FOR GIVEN ID');
+            dbms_output.put_line('ERROR : NO ACTIVE PROMOTION EXISTS FOR GIVEN ID');
             RAISE invalid_data;
         ELSIF cntst = 0 THEN
-        dbms_output.put_line('ERROR : NO SEAT TYPE EXISTS FOR GIVEN ID');
+            dbms_output.put_line('ERROR : NO SEAT TYPE EXISTS FOR GIVEN ID');
             RAISE invalid_data;
         ELSE
             SELECT
@@ -349,16 +340,16 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             seattypeid = input_booking.seat_type_seattypeid;
 
         IF cnt_customer_check = 0 THEN
-        dbms_output.put_line('ERROR : NO CUSTOMER EXISTS FOR GIVEN ID');
+            dbms_output.put_line('ERROR : NO CUSTOMER EXISTS FOR GIVEN ID');
             RAISE invalid_data;
         ELSIF cnt_fs_check = 0 THEN
-        dbms_output.put_line('ERROR : NO FLIGHT FOR GIVEN ID');
+            dbms_output.put_line('ERROR : NO FLIGHT FOR GIVEN ID');
             RAISE invalid_data;
         ELSIF cnt_promo_check = 0 THEN
-        dbms_output.put_line('ERROR : NO PROMOTION EXISTS FOR GIVEN ID');
+            dbms_output.put_line('ERROR : NO PROMOTION EXISTS FOR GIVEN ID');
             RAISE invalid_data;
         ELSIF cnt_st_check = 0 THEN
-        dbms_output.put_line('ERROR : NO SEAT TYPE EXISTS FOR GIVEN ID');
+            dbms_output.put_line('ERROR : NO SEAT TYPE EXISTS FOR GIVEN ID');
             RAISE invalid_data;
         END IF;
 
@@ -376,9 +367,12 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
         
             -- CHECKING IF FLIGHT DATE IS IN PAST
         IF fs_rec.dateoftravel < sysdate THEN
+            dbms_output.put_line('ERROR : FLIGHT IS IN PAST');
             RAISE invalid_dateoftravel;
         END IF;
+
         IF fs_rec.seatsavailable = 0 OR fs_rec.seatsavailable < no_of_passengers THEN
+            dbms_output.put_line('INFO : NO SEATS LEFT');
             RAISE insufficient_seats;
         END IF;
         
@@ -431,6 +425,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             -- IF NO SEATS LEFT THEN RAISE EXCEPTION
         no_of_seats_remaining := no_of_seats_seattype - no_of_seats_booked;
         IF no_of_seats_remaining < no_of_passengers THEN
+            dbms_output.put_line('INFO : NO SEATS LEFT');
             RAISE insufficient_seats;
         END IF;
         
@@ -477,6 +472,173 @@ CREATE OR REPLACE PACKAGE BODY pkg_booking AS
             ROLLBACK;
         WHEN invalid_dateoftravel THEN
             dbms_output.put_line('TRYING TO BOOK FOR PAST FLIGHT');
+            dbms_output.put_line(NULL);
+            ROLLBACK;
+        WHEN OTHERS THEN
+            dbms_output.put_line('TRYING TO BOOK FOR PAST FLIGHT');
+            dbms_output.put_line(NULL);
+    END;
+
+    PROCEDURE passenger_cancel (
+        input_passenger_id passenger.passengerid%TYPE,
+        bool_commit    BOOLEAN
+    ) AS
+
+        pass_rec       passenger%rowtype;
+        book_rec       booking%rowtype;
+        cnt_pass_check NUMBER;
+        flight_rec     flight_schedules%rowtype;
+      
+    BEGIN
+        SELECT
+            COUNT(*)
+        INTO cnt_pass_check
+        FROM
+            passenger
+        WHERE
+            passengerid = input_passenger_id;
+
+        IF cnt_pass_check = 0 THEN
+            dbms_output.put_line('ERROR : PASSENGER DOESN"T EXIST FOR THE GIVEN ID');
+            RAISE invalid_data;
+        END IF;
+        
+        -- FETCH PASSENGER
+        SELECT
+            *
+        INTO pass_rec
+        FROM
+            passenger
+        WHERE
+            passengerid = input_passenger_id
+        FOR UPDATE;
+        -- FETCH BOOKING
+        SELECT
+            *
+        INTO book_rec
+        FROM
+            booking
+        WHERE
+            bookingid = pass_rec.booking_bookingid;
+        -- FETCH FLIGHT
+        SELECT
+            *
+        INTO flight_rec
+        FROM
+            flight_schedules
+        WHERE
+            flight_schedule_id = book_rec.flight_schedules_flight_schedule_id
+        FOR UPDATE;
+        
+        -- CHECK IF FLIGHT IS IN PAST
+        IF flight_rec.dateoftravel < sysdate THEN
+            dbms_output.put_line('ERROR : FLIGHT IS IN THE PAST');
+            RAISE invalid_dateoftravel;
+        END IF;
+        
+        -- UPDATE PASSENGER
+        UPDATE passenger
+        SET
+            status_statusid = 2
+        WHERE
+            passengerid = pass_rec.passengerid;
+        
+        -- UPDATE FLIGHT SEAT AVAILABILITY
+        UPDATE flight_schedules
+        SET
+            seatsavailable = seatsavailable + 1
+        WHERE
+            flight_schedule_id = flight_rec.flight_schedule_id;
+
+        IF bool_commit THEN
+            COMMIT;
+        END IF;
+    EXCEPTION
+        WHEN invalid_data THEN
+            dbms_output.put_line('INVALID DATA ENTERED. WE ARE ROLLING BACK YOUR TRANSACTION.');
+            dbms_output.put_line(NULL);
+            ROLLBACK;
+        WHEN OTHERS THEN
+            dbms_output.put_line(sqlerrm);
+            dbms_output.put_line(NULL);
+            ROLLBACK;
+    END;
+
+    PROCEDURE booking_cancel (
+        input_booking_id booking.bookingid%TYPE
+    ) AS
+        cnt_booking_check NUMBER;
+        book_rec          booking%rowtype;
+        flight_rec        flight_schedules%rowtype;
+    BEGIN
+        dbms_output.put_line('** START CANCELLATION OF BOOKING **');
+        -- CHECKING IF BOOKING EXISTS
+        SELECT
+            COUNT(*)
+        INTO cnt_booking_check
+        FROM
+            booking
+        WHERE
+            bookingid = input_booking_id;
+
+        IF cnt_booking_check = 0 THEN
+            dbms_output.put_line('ERROR : BOOKING DOESN"T EXIST FOR THE GIVEN ID');
+            RAISE invalid_data;
+        END IF;
+        
+        -- FETCH BOOKING
+        SELECT
+            *
+        INTO book_rec
+        FROM
+            booking
+        WHERE
+            bookingid = input_booking_id;
+
+        
+         -- FETCH FLIGHT
+        SELECT
+            *
+        INTO flight_rec
+        FROM
+            flight_schedules
+        WHERE
+            flight_schedule_id = book_rec.flight_schedules_flight_schedule_id;
+            
+        -- CHECK IF FLIGHT IS IN PAST
+        IF flight_rec.dateoftravel < sysdate THEN
+            dbms_output.put_line('ERROR : FLIGHT IS IN THE PAST');
+            RAISE invalid_dateoftravel;
+        END IF;
+        
+        -- FETCH PASSENGERS
+        FOR p IN (
+            SELECT
+                *
+            FROM
+                passenger
+            WHERE
+                    booking_bookingid = input_booking_id
+                AND status_statusid = 1
+        ) LOOP
+            dbms_output.put_line('** START CANCELLATION OF PASSENGER  '
+                                 || p.firstname
+                                 || ' '
+                                 || p.lastname
+                                 || ' **');
+
+            passenger_cancel(p.passengerid, false);
+        END LOOP;
+    COMMIT;
+    EXCEPTION
+        WHEN invalid_data THEN
+            dbms_output.put_line('INVALID DATA ENTERED. WE ARE ROLLING BACK YOUR TRANSACTION.');
+            dbms_output.put_line(NULL);
+            ROLLBACK;
+        WHEN invalid_dateoftravel THEN
+            dbms_output.put_line('TRYING TO CANCEL FOR PAST FLIGHT');
+        WHEN OTHERS THEN
+            dbms_output.put_line(sqlerrm);
             dbms_output.put_line(NULL);
             ROLLBACK;
     END;
