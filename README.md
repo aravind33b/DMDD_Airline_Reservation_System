@@ -37,6 +37,10 @@ Note that this is different than general ticketing systems like Kayak or Expedia
 This document outlines the problem statement and the objectives of the team.
 We also provide the Entity Relationship diagram of our proposed database structure and a detailed listing of our entities along with the sql scripts to build the entire system. 
 
+ # Entity Relationship Diagram:
+
+![ER Diagram](/Project%20Files/ER_Diagram.png)
+
 # List of scripts and their functionality
 
 | Script Name | Description |
@@ -73,16 +77,16 @@ We also provide the Entity Relationship diagram of our proposed database structu
 
  ![Passenger Traffic by Destination States](/Project%20Files/Graphs/DMDD_1.png)
 
-![Passenger Traffic by Destination States](/Project%20Files/Graphs/DMDD_2.jpg)
+![Passenger Traffic by Source States](/Project%20Files/Graphs/DMDD_2.jpg)
 
-![Passenger Traffic by Destination States](/Project%20Files/Graphs/DMDD_3.jpg)
+![Passenger Traffic per Quarter](/Project%20Files/Graphs/DMDD_3.jpg)
 
-![Passenger Traffic by Destination States](/Project%20Files/Graphs/DMDD_4.jpg) 
+![Promotions used count](/Project%20Files/Graphs/DMDD_4.jpg) 
 
-![Passenger Traffic by Destination States](/Project%20Files/Graphs/DMDD_5.jpg)
+![Seat distribution by Flight Type](/Project%20Files/Graphs/DMDD_5.jpg)
 
-![Passenger Traffic by Destination States](/Project%20Files/Graphs/DMDD_6.jpg)
+![Top routes this month](/Project%20Files/Graphs/DMDD_6.jpg)
 
-![Passenger Traffic by Destination States](/Project%20Files/Graphs/DMDD_7.jpg)
+![Top routes this Year](/Project%20Files/Graphs/DMDD_7.jpg)
 
-![Passenger Traffic by Destination States](/Project%20Files/Graphs/DMDD_8.jpg)
+![Top routes with vacant seats](/Project%20Files/Graphs/DMDD_8.jpg)
