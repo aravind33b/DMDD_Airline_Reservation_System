@@ -57,7 +57,8 @@ for i in (select 'SEQ_CUSTOMER' seq_name from dual union all
       select 'SEQ_STATUS' seq_name from dual union all
       select 'SEQ_PASSENGER' seq_name from dual union all
       select 'SEQ_FS' seq_name from dual union all
-      select 'SEQ_PROMOTION' seq_name from dual
+      select 'SEQ_PROMOTION' seq_name from dual union all
+      select 'SEQ_FT' seq_name from dual
    )
    loop
    dbms_output.put_line('***Drop sequence '||i.seq_name||'***');
@@ -327,6 +328,9 @@ CREATE TABLE FLIGHT_SCHEDULES_audit (
 
   -- CREATE SEQUENCE for PROMOTION TABLE
     CREATE SEQUENCE seq_promotion start with 4 increment by 1;
+
+    -- CREATE SEQUENCE for  FLIGHT_TYPE TABLE
+    CREATE SEQUENCE seq_ft start with 3 increment by 1;
 
   -- Inserting values into the Customer table
 
