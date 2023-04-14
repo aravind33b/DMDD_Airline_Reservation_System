@@ -1,10 +1,10 @@
 set serveroutput on
 DECLARE
-    b1            booking%rowtype;
-    passengers_b1 pkg_booking.passenger_array;
+    b1            app_admin.booking%rowtype;
+    passengers_b1 app_admin.pkg_booking.passenger_array;
 BEGIN
     dbms_output.put_line('RESERVING A BOOKING FOR FLIGHT 44');
-    dbms_output.put_line('SEAT AVAILABLE COUNT FOR FLIGHT 44 ' || get_flight_Seat_availability(44));
+    dbms_output.put_line('SEAT AVAILABLE COUNT FOR FLIGHT 44 ' || app_admin.get_flight_Seat_availability(44));
     b1.customer_id := 15;
     b1.promotion_promotionid := 1;
     b1.seat_type_seattypeid := 1;
@@ -22,23 +22,23 @@ BEGIN
     passengers_b1(2).age := 32;
     passengers_b1(2).gender := 'M';
     app_admin.pkg_booking.booking_with_passengers(b1, passengers_b1);
-    dbms_output.put_line('SEAT AVAILABLE COUNT ' || get_flight_Seat_availability(44));
+    dbms_output.put_line('SEAT AVAILABLE COUNT ' || app_admin.get_flight_Seat_availability(44));
     dbms_output.put_line(NULL);
     
     dbms_output.put_line('CANCELLING PASSENGER WITH ID 374 IN FLIGHT 44');
     app_admin.pkg_booking.passenger_cancel(374,true);
-    dbms_output.put_line('SEAT AVAILABLE COUNT ' || get_flight_Seat_availability(44));
+    dbms_output.put_line('SEAT AVAILABLE COUNT ' || app_admin.get_flight_Seat_availability(44));
     dbms_output.put_line(NULL);
     
     
     dbms_output.put_line('CANCELLING BOOKING WITH ID 247 IN FLIGHT 44');
     app_admin.pkg_booking.booking_cancel(247);
-    dbms_output.put_line('SEAT AVAILABLE COUNT ' || get_flight_Seat_availability(44));
+    dbms_output.put_line('SEAT AVAILABLE COUNT ' || app_admin.get_flight_Seat_availability(44));
     dbms_output.put_line(NULL);
     
     
     dbms_output.put_line('RESERVING A BOOKING FOR FLIGHT 40');
-    dbms_output.put_line('SEAT AVAILABLE COUNT ' || get_flight_Seat_availability(40));
+    dbms_output.put_line('SEAT AVAILABLE COUNT ' || app_admin.get_flight_Seat_availability(40));
     b1.customer_id := 9;
     b1.promotion_promotionid := 1;
     b1.seat_type_seattypeid := 2;
@@ -56,7 +56,7 @@ BEGIN
     passengers_b1(2).age := 63;
     passengers_b1(2).gender := 'M';
     app_admin.pkg_booking.booking_with_passengers(b1, passengers_b1);
-    dbms_output.put_line('SEAT AVAILABLE COUNT ' || get_flight_Seat_availability(40));
+    dbms_output.put_line('SEAT AVAILABLE COUNT ' || app_admin.get_flight_Seat_availability(40));
     dbms_output.put_line(NULL);
       
 END;

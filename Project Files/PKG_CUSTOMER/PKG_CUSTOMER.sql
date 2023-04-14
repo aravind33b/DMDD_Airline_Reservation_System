@@ -20,6 +20,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_customer AS
         mobileno   customer.mobileno%TYPE
     ) IS
         cntuser NUMBER;
+        customer_id NUMBER;
     BEGIN
         SELECT
             COUNT(*)
@@ -42,6 +43,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_customer AS
         ELSIF regexp_count(mobileno, '^[0-9]+$') <> 1 THEN
             RAISE invalid_data;
         ELSE
+        customer_id := seq_customer.NEXTVAL;
             INSERT INTO customer (
                 customerid,
                 firstname,
@@ -49,7 +51,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_customer AS
                 email,
                 mobileno
             ) VALUES (
-                seq_customer.NEXTVAL,
+                customer_id,
                 firstname,
                 lastname,
                 inputemail,
@@ -57,7 +59,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_customer AS
             );
 
             COMMIT;
-            dbms_output.put_line('USER ADDED SUCCCESSFULLY');
+            dbms_output.put_line('CUSTOMER ADDED SUCCCESSFULLY WITH ID ' || customer_id);
         END IF;
 
     EXCEPTION
