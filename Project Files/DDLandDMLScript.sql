@@ -5,7 +5,11 @@ declare
     v_sql varchar(2000);
 begin
    dbms_output.put_line('Start schema cleanup');
-for i in (select 'PASSENGER' table_name from dual union all
+for i in (select 'BOOKING_AUDIT' table_name from dual union all
+             select 'PASSENGER_CANCEL_AUDIT' table_name from dual union all
+             select 'ROUTES_AUDIT' table_name from dual union all
+             select 'FLIGHT_SCHEDULES_AUDIT' table_name from dual union all
+             select 'PASSENGER' table_name from dual union all
              select 'STATUS' table_name from dual union all
              select 'BOOKING' table_name from dual union all
              select 'PROMOTION' table_name from dual union all
@@ -241,6 +245,54 @@ CREATE TABLE PASSENGER (
     FOREIGN KEY (Status_StatusID)
     REFERENCES STATUS (StatusID)
     ON DELETE CASCADE);
+
+-- Table Booking Audit
+--------------------------------------------------------------------
+CREATE TABLE booking_audit (
+  audit_id NUMBER GENERATED ALWAYS AS IDENTITY,
+  booking_id NUMBER NOT NULL,
+  operation_type VARCHAR2(10),
+  audit_timestamp TIMESTAMP DEFAULT SYSTIMESTAMP,
+  PRIMARY KEY (audit_id),
+  FOREIGN KEY (booking_id) REFERENCES booking (BookingID) ON DELETE CASCADE
+);
+
+-- Table Passenger Cancel Audit
+--------------------------------------------------------------------
+
+CREATE TABLE passenger_cancel_audit (
+  audit_id NUMBER GENERATED ALWAYS AS IDENTITY,
+  PassengerID NUMBER NOT NULL,
+  operation_type VARCHAR2(10),
+  audit_timestamp TIMESTAMP DEFAULT SYSTIMESTAMP,
+  PRIMARY KEY (audit_id),
+  FOREIGN KEY (PassengerID) REFERENCES PASSENGER (PassengerID) ON DELETE CASCADE
+);
+
+
+-- Table Route Audit
+--------------------------------------------------------------------
+CREATE TABLE routes_audit (
+  audit_id NUMBER GENERATED ALWAYS AS IDENTITY,
+  RouteID NUMBER NOT NULL,
+  operation_type VARCHAR2(10),
+  audit_timestamp TIMESTAMP DEFAULT SYSTIMESTAMP,
+  PRIMARY KEY (audit_id),
+  FOREIGN KEY (RouteID) REFERENCES ROUTES (RouteID) ON DELETE CASCADE
+);
+
+-- Table Flight Schedule Audit
+CREATE TABLE FLIGHT_SCHEDULES_audit (
+  audit_id NUMBER GENERATED ALWAYS AS IDENTITY,
+  FLIGHT_SCHEDULE_ID NUMBER NOT NULL,
+  operation_type VARCHAR2(10),
+  audit_timestamp TIMESTAMP DEFAULT SYSTIMESTAMP,
+  PRIMARY KEY (audit_id),
+  FOREIGN KEY (FLIGHT_SCHEDULE_ID) REFERENCES FLIGHT_SCHEDULES (FLIGHT_SCHEDULE_ID) ON DELETE CASCADE
+);
+
+
+
 
   -- GRANTING PRIVILEGES TO CUSTOMER
   GRANT SELECT, INSERT, UPDATE ON CUSTOMER TO CUSTOMER;
