@@ -22,6 +22,11 @@ CREATE OR REPLACE PACKAGE pkg_airline AS
         traveldate     flight_schedules.dateoftravel%TYPE
     );
 
+    PROCEDURE add_promotion (
+        INPUT_PROMOTIONNAME PROMOTION.PROMOTIONNAME%TYPE,
+        INPUT_PROMOTIONDESC PROMOTION.PROMOTIONDESC%TYPE,
+        INPUT_ACTIVE PROMOTION.ACTIVE%TYPE
+    );
     invalid_data EXCEPTION;
     record_exists EXCEPTION;
 END pkg_airline;
@@ -305,6 +310,51 @@ END;
             dbms_output.put_line('INVALID DATA ENTERED');
         WHEN OTHERS THEN
             dbms_output.put_line(sqlerrm);
+    END;
+
+    PROCEDURE add_promotion (
+        INPUT_PROMOTIONNAME PROMOTION.PROMOTIONNAME%TYPE,
+        INPUT_PROMOTIONDESC PROMOTION.PROMOTIONDESC%TYPE,
+        INPUT_ACTIVE PROMOTION.ACTIVE%TYPE
+    ) AS
+        invalid_data EXCEPTION;
+        promo_exists EXCEPTION;
+        promo_id NUMBER;
+        temp NUMBER;
+    BEGIN
+        select count(*) INTO temp from promotion where promotionname=INPUT_PROMOTIONNAME and active='Y';
+        IF temp>0 THEN
+            RAISE promo_exists;
+        ElSIF INPUT_PROMOTIONNAME IS NULL OR INPUT_PROMOTIONNAME = '' OR length(INPUT_PROMOTIONDESC) = 0 THEN
+            RAISE invalid_data;
+        ELSIF INPUT_PROMOTIONDESC IS NULL OR length(INPUT_PROMOTIONDESC) = 0 OR INPUT_PROMOTIONDESC = '' THEN
+            RAISE invalid_data;
+        ELSIF INPUT_ACTIVE != 'Y' AND INPUT_ACTIVE !='N' OR INPUT_ACTIVE IS NULL OR length(INPUT_ACTIVE) = 0 OR INPUT_ACTIVE = '' THEN
+            RAISE invalid_data;
+        ELSE
+            promo_id := seq_promotion.NEXTVAL;
+            INSERT INTO promotion (
+                PROMOTIONID,
+                PROMOTIONNAME,
+                PROMOTIONDESC,
+                ACTIVE
+            ) VALUES (
+            promo_id,
+            INPUT_PROMOTIONNAME,
+            INPUT_PROMOTIONDESC,
+            INPUT_ACTIVE
+        );
+
+        COMMIT;
+        dbms_output.put_line('PROMOTION ADDED SUCCCESSFULLY' || promo_id);
+        END IF;
+        EXCEPTION
+            WHEN promo_exists THEN
+                dbms_output.put_line('PROMOTION ALREADY EXISTS');
+            WHEN invalid_data THEN
+                dbms_output.put_line('NAME, DESCRIPTION and ACTIVE CAN NOT BE NULL');
+            WHEN OTHERS THEN
+                dbms_output.put_line(sqlerrm);
     END;
  
 END pkg_airline;
