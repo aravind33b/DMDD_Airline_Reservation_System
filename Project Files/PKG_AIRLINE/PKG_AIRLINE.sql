@@ -22,6 +22,11 @@ CREATE OR REPLACE PACKAGE pkg_airline AS
         traveldate     flight_schedules.dateoftravel%TYPE
     );
 
+     PROCEDURE add_flight_type (
+        input_route_id flight_schedules.routes_routeid%TYPE,
+        traveldate     flight_schedules.dateoftravel%TYPE
+    );
+
     invalid_data EXCEPTION;
     record_exists EXCEPTION;
 END pkg_airline;
