@@ -21,18 +21,18 @@ BEGIN
     passengers_b1(2).phoneno := '9874561230';
     passengers_b1(2).age := 32;
     passengers_b1(2).gender := 'M';
-    pkg_booking.booking_with_passengers(b1, passengers_b1);
+    app_admin.pkg_booking.booking_with_passengers(b1, passengers_b1);
     dbms_output.put_line('SEAT AVAILABLE COUNT ' || get_flight_Seat_availability(44));
     dbms_output.put_line(NULL);
     
     dbms_output.put_line('CANCELLING PASSENGER WITH ID 374 IN FLIGHT 44');
-    pkg_booking.passenger_cancel(374,true);
+    app_admin.pkg_booking.passenger_cancel(374,true);
     dbms_output.put_line('SEAT AVAILABLE COUNT ' || get_flight_Seat_availability(44));
     dbms_output.put_line(NULL);
     
     
     dbms_output.put_line('CANCELLING BOOKING WITH ID 247 IN FLIGHT 44');
-    pkg_booking.booking_cancel(247);
+    app_admin.pkg_booking.booking_cancel(247);
     dbms_output.put_line('SEAT AVAILABLE COUNT ' || get_flight_Seat_availability(44));
     dbms_output.put_line(NULL);
     
@@ -55,7 +55,7 @@ BEGIN
     passengers_b1(2).phoneno := '9874561230';
     passengers_b1(2).age := 63;
     passengers_b1(2).gender := 'M';
-    pkg_booking.booking_with_passengers(b1, passengers_b1);
+    app_admin.pkg_booking.booking_with_passengers(b1, passengers_b1);
     dbms_output.put_line('SEAT AVAILABLE COUNT ' || get_flight_Seat_availability(40));
     dbms_output.put_line(NULL);
       
