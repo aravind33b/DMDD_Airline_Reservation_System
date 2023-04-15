@@ -5,3 +5,4 @@ GRANT EXECUTE ON PROMOTION_IS_ACTIVE TO airline_admin, customer;
 GRANT EXECUTE ON SEAT_TYPE_EXISTS TO airline_admin, customer;
 GRANT EXECUTE ON TOTAL_SEATS_AVAILABLE TO airline_admin, customer;
 GRANT EXECUTE ON user_exists TO airline_admin;
+GRANT EXECUTE ON get_flight_Seat_availability to airline_admin, customer;

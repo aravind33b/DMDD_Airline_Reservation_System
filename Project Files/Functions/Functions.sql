@@ -112,3 +112,17 @@ BEGIN
     END IF;
 END;
 
+/
+create or replace FUNCTION get_flight_Seat_availability(fs_id IN NUMBER)
+RETURN NUMBER
+IS
+    seat_count NUMBER;
+BEGIN
+    SELECT SEATSAVAILABLE
+    INTO seat_count
+    FROM FLIGHT_SCHEDULES
+    WHERE FLIGHT_SCHEDULE_ID = fs_id;
+    
+    RETURN seat_count;
+END;
+/
