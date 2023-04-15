@@ -9,6 +9,7 @@ for i in (select 'BOOKING_AUDIT' table_name from dual union all
              select 'PASSENGER_CANCEL_AUDIT' table_name from dual union all
              select 'ROUTES_AUDIT' table_name from dual union all
              select 'FLIGHT_SCHEDULES_AUDIT' table_name from dual union all
+             select 'FLIGHT_TYPE_AUDIT' table_name from dual union all
              select 'PASSENGER' table_name from dual union all
              select 'STATUS' table_name from dual union all
              select 'BOOKING' table_name from dual union all
@@ -133,7 +134,7 @@ CREATE TABLE ROUTES (
   CONSTRAINT fk_ROUTES_FlightType
     FOREIGN KEY (FlightType_FlightTypeID)
     REFERENCES FLIGHT_TYPE (FlightTypeID)
-    ON DELETE SET NULL,
+    ON DELETE CASCADE,
   CONSTRAINT fk_ROUTES_AIRPORT_CODES
     FOREIGN KEY (SourceAirport)
     REFERENCES AIRPORTS (Airports_ID)
@@ -291,6 +292,16 @@ CREATE TABLE FLIGHT_SCHEDULES_audit (
   audit_timestamp TIMESTAMP DEFAULT SYSTIMESTAMP,
   PRIMARY KEY (audit_id),
   FOREIGN KEY (FLIGHT_SCHEDULE_ID) REFERENCES FLIGHT_SCHEDULES (FLIGHT_SCHEDULE_ID) ON DELETE CASCADE
+);
+
+-- Table Flight Schedule Audit
+CREATE TABLE FLIGHT_TYPE_audit (
+  audit_id NUMBER GENERATED ALWAYS AS IDENTITY,
+  FlightTypeID NUMBER NOT NULL,
+  operation_type VARCHAR2(10),
+  audit_timestamp TIMESTAMP DEFAULT SYSTIMESTAMP,
+  PRIMARY KEY (audit_id),
+  FOREIGN KEY (FlightTypeID) REFERENCES FLIGHT_TYPE (FLIGHTTYPEID) ON DELETE CASCADE
 );
 
 
