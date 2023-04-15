@@ -53,6 +53,7 @@ We also provide the Entity Relationship diagram of our proposed database structu
 | **PKG_GRANTS.sql** | Grants Execute on Booking, Customer, and Airline packages |
 | **Functions.sql** | Creates functions to calculate passenger count, check if flight schedule, promotion, seat types, user exists and if promotion is active, the total number of seats available |
 | **Functions_Grants.sql** | Grants Execute to the functions mentioned above |
+| **Triggers.sql** | Has Triggers for inserting booking, inserting record into audit table, update passenger status, update route, insert flight schedule, insert routes audit record, insert flight type |
 | **Package_Airline_Execute.sql** | Has execution queries for airline package |
 | **Package_Booking_Execute.sql** | Has execution queries for booking package |
 | **Package_Customer_Execute.sql** | Has execution queries for customer package |
@@ -63,7 +64,7 @@ We also provide the Entity Relationship diagram of our proposed database structu
 
     2. Run Users.sql script as APP_ADMIN 
 
-    3. Run Project Files/PKG_AIRLINE/           PKG_AIRLINE.sql script as APP_ADMIN 
+    3. Run Project Files/PKG_AIRLINE/PKG_AIRLINE.sql script as APP_ADMIN 
 
     4. Run Project Files/PKG_CUSTOMER/PKG_CUSTOMER.sql script as APP_ADMIN 
 
@@ -71,7 +72,17 @@ We also provide the Entity Relationship diagram of our proposed database structu
 
     6. Run PKG_GRANTS script as APP_ADMIN 
 
-    7. Run Project Files/Functions/Functions_Grants.sql script as APP_ADMIN 
+    7. Run Project Files/Functions/Functions.sql script as APP_ADMIN
+
+    8. Run Project Files/Functions/Functions_Grants.sql script as APP_ADMIN 
+
+    9. Run Project Files/Triggers/Triggers.sql script as APP_ADMIN 
+
+    10. Run Project Files/Package_Airline_Execute.sql script as AIRLINE_ADMIN 
+
+    11. Run Project Files/Package_Booking_Execute.sql script as CUSTOMER 
+
+    12. Run Project Files/Package_Customer_Execute.sql script as CUSTOMER 
 
  # Graphs:
 
